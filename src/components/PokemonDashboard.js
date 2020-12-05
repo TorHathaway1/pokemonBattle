@@ -13,7 +13,6 @@ export default function PokemonDashBoard(props) {
   const [users, setUsers] = useState({});
   const classes = useStyles();
   useEffect(() => {
-    getRandomPokemon();
     firebase
       .database()
       .ref("status")
@@ -24,6 +23,10 @@ export default function PokemonDashBoard(props) {
         }
       });
   }, []);
+
+  useEffect(() => {
+    getRandomPokemon();
+  }, [props.pokemonArray]);
 
   const getRandomPokemon = async () => {
     const challenger = await initializePokemonForBattle(props.pokemonArray[5]);
