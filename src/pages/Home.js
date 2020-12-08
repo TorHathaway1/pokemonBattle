@@ -4,12 +4,180 @@ import firebase from "../firebaseConfig";
 import { makeStyles } from "@material-ui/core/styles";
 import { Container, Box } from "@material-ui/core";
 
-import PokemonCardGrid from "../components/PokemonCardGrid";
+import CardGrid from "../components/CardGrid";
 import AppTopNav from "../components/AppTopNav";
-import PokemonDashboard from "../components/PokemonDashboard";
+import PokemonDashboard from "../components/Dashboard";
 import BattleGround from "./BattleGround";
 
 import { initializePokemonForBattle } from "../common/pokemonFunctions";
+import { setUserOnlineStatus } from "../common/firebaseFunctions";
+import {
+  maximumNumberOfPokemon,
+  sizeOfPokemonGroupFetched,
+  totalNumberOfPokemonTypes,
+} from "../constants/vars";
+
+export default function Home(props) {
+  const [pokemonArray, setPokemonArray] = useState([]);
+  const [usersPokemonCollection, setUsersPokemonCollection] = useState({});
+  const [allPokemonTypes, setAllPokemonTypes] = useState([]);
+  const [timeForBattle, setTimeForBattle] = useState(false);
+
+  const randomPokemonIDToStartGroupFrom = Math.ceil(
+    Math.random() * maximumNumberOfPokemon
+  );
+
+  useEffect(() => {
+    setUserOnlineStatus();
+    fetchAllPokemonTypes();
+    fetchAndSetDataForPokemonArray(
+      randomPokemonIDToStartGroupFrom,
+      sizeOfPokemonGroupFetched
+    );
+    setupUsersPokemonFirebaseListener();
+  }, []);
+
+  const fetchAllPokemonTypes = () => {
+    let tempTypes = allPokemonTypes;
+    let promises = [];
+    for (var id = 1; id < totalNumberOfPokemonTypes; id++) {
+      promises.push(
+        fetchTypeRequest(id).then((response) => {
+          tempTypes.push({
+            ...response.data,
+            type: { name: response.data.name },
+          });
+        })
+      );
+    }
+    Promise.all(promises).then(() => setAllPokemonTypes(tempTypes));
+  };
+
+  const fetchTypeRequest = (id) => {
+    return axios.get(process.env.REACT_APP_POKEMON_API + "/type/" + id);
+  };
+
+  const fetchAndSetDataForPokemonArray = async (startingAtID, groupSize) => {
+    let promises = [];
+    setPokemonArray([]);
+    let tempPokemonArray = [];
+    const arrayOfPokemonNames = await fetchArrayOfPokemonNames(
+      startingAtID,
+      groupSize
+    );
+    arrayOfPokemonNames.forEach((p, i) => {
+      promises.push(
+        fetchPokemonDataRequest(p.name).then((pokemon) => {
+          tempPokemonArray.push(addBaseStatsToPokemon(pokemon));
+        })
+      );
+    });
+    Promise.all(promises).then(() => setPokemonArray(tempPokemonArray));
+  };
+
+  const fetchArrayOfPokemonNames = async (startingAtID, groupSize) => {
+    return axios
+      .get(
+        process.env.REACT_APP_POKEMON_API +
+          "/pokemon?limit=" +
+          groupSize +
+          "&offset=" +
+          startingAtID
+      )
+      .then((result) => {
+        return result.data.results;
+      });
+  };
+
+  const addBaseStatsToPokemon = (pokemon) => {
+    return {
+      ...pokemon,
+      moves: pokemon.moves.splice(0, 5),
+      health: 100,
+      selected: false,
+      experience: 0,
+      level: 1,
+    };
+  };
+
+  const fetchPokemonDataRequest = (pokemonName) => {
+    return axios
+      .get(process.env.REACT_APP_POKEMON_API + "/pokemon/" + pokemonName)
+      .then((response) => {
+        return response.data;
+      });
+  };
+
+  const selectPokemonInDashboard = async (pokemon) => {
+    let p = await initializePokemonForBattle(pokemon);
+    addPokemonToUserInFirebase(p);
+  };
+
+  const addPokemonToUserInFirebase = async (pokemon) => {
+    return firebase
+      .database()
+      .ref("users/" + props.user.uid + "/pokemon/" + pokemon.name)
+      .set(pokemon);
+  };
+
+  const setupUsersPokemonFirebaseListener = () => {
+    var usersPokemonCollectionFirebaseConnection = firebase
+      .database()
+      .ref("users/" + props.user.uid + "/pokemon");
+    usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
+      // on change of user's pokemon in firebase, update users pokemon collection in application state
+      if (snapshot.val()) {
+        const data = snapshot.val();
+        setUsersPokemonCollection(data);
+      } else {
+        setUsersPokemonCollection({});
+      }
+    });
+  };
+
+  return (
+    <Container maxWidth={false} disableGutters>
+      {!timeForBattle && (
+        <>
+          <AppTopNav
+            user={props.user}
+            usersPokemon={usersPokemonCollection}
+            setTimeForBattle={setTimeForBattle}
+            logout={props.logout}
+          />
+          <Box mt={8} p={3}>
+            {!timeForBattle &&
+              Object.values(usersPokemonCollection).length < 2 && (
+                <CardGrid
+                  selectPokemon={selectPokemonInDashboard}
+                  usersPokemon={usersPokemonCollection}
+                  pokemonArray={pokemonArray}
+                />
+              )}
+            {Object.values(usersPokemonCollection).length === 2 && (
+              <PokemonDashboard
+                usersPokemon={usersPokemonCollection}
+                selectPokemon={props.selectPokemon}
+                setTimeForBattle={setTimeForBattle}
+                user={props.user}
+              />
+            )}
+          </Box>
+        </>
+      )}
+      {timeForBattle && Object.values(usersPokemonCollection).length > 1 && (
+        <BattleGround
+          timeForBattle={timeForBattle}
+          setTimeForBattle={setTimeForBattle}
+          setPokemonForUser={addPokemonToUserInFirebase}
+          selectedPokemon={Object.values(usersPokemonCollection)}
+          pokemonTypes={allPokemonTypes}
+          user={props.user}
+        />
+      )}
+    </Container>
+  );
+}
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -35,200 +203,3 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(2),
   },
 }));
-
-export default function Home(props) {
-  const classes = useStyles();
-  const [pokemonArray, setPokemonArray] = useState([]);
-  const [usersPokemon, setUsersPokemon] = useState({});
-  const [pokemonTypes, setPokemonTypes] = useState([]);
-
-  const [timeForBattle, setTimeForBattle] = useState(false);
-
-  useEffect(() => {
-    fetchAllTypes();
-    fetchPokemon(20, Math.ceil(Math.random() * 500));
-    var pokemon = firebase
-      .database()
-      .ref("users/" + props.user.uid + "/pokemon");
-    pokemon.on("value", (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setUsersPokemon(data);
-      } else {
-        setUsersPokemon({});
-      }
-    });
-  }, []);
-
-  // set user as online
-  useEffect(() => {
-    setUserState();
-  }, []);
-
-  const setUserState = () => {
-    var uid = firebase.auth().currentUser.uid;
-    var userStatusDatabaseRef = firebase.database().ref("/status/" + uid);
-    var isOfflineForDatabase = {
-      state: "offline",
-      last_changed: firebase.database.ServerValue.TIMESTAMP,
-    };
-
-    var isOnlineForDatabase = {
-      state: "online",
-      last_changed: firebase.database.ServerValue.TIMESTAMP,
-    };
-    firebase
-      .database()
-      .ref(".info/connected")
-      .on("value", function (snapshot) {
-        if (snapshot.val() === false) {
-          return;
-        }
-        userStatusDatabaseRef
-          .onDisconnect()
-          .set(isOfflineForDatabase)
-          .then(function () {
-            userStatusDatabaseRef.set(isOnlineForDatabase);
-          });
-      });
-  };
-
-  const logout = () => {
-    setUserState();
-    props.logout();
-  };
-
-  const fetchPokemon = async (limit, offset) => {
-    setPokemonArray([]);
-    const pokemonList = await fetchPokemonList(limit, offset);
-    pokemonList.forEach((p, i) => {
-      fetchPokemonData(p.name).then((r) => {
-        let p = {
-          ...r.data,
-          moves: r.data.moves.splice(0, 5),
-          health: 100,
-          selected: false,
-          experience: 0,
-          level: 1,
-        };
-        setPokemonArray((pArray) => [...pArray, p]);
-      });
-    });
-  };
-
-  const fetchPokemonList = async (limit, offset) => {
-    return axios
-      .get(
-        process.env.REACT_APP_POKEMON_API +
-          "/pokemon?limit=" +
-          limit +
-          "&offset=" +
-          offset
-      )
-      .then((result) => {
-        return result.data.results;
-      });
-  };
-
-  const fetchAllTypes = () => {
-    let tempTypes = pokemonTypes;
-    let promises = [];
-    for (var i = 1; i < 18; i++) {
-      promises.push(
-        fetchType(i).then((response) => {
-          tempTypes.push({
-            ...response.data,
-            type: { name: response.data.name },
-          });
-        })
-      );
-    }
-
-    Promise.all(promises).then(() => setPokemonTypes(tempTypes));
-  };
-
-  const fetchType = (id) => {
-    return axios.get(process.env.REACT_APP_POKEMON_API + "/type/" + id);
-  };
-
-  const fetchPokemonData = (pokemonName) => {
-    return axios.get(
-      process.env.REACT_APP_POKEMON_API + "/pokemon/" + pokemonName
-    );
-  };
-
-  const selectPokemon = async (pokemon) => {
-    let p = await initializePokemonForBattle(pokemon);
-    setPokemonForUser(p);
-  };
-
-  const setPokemonForUser = async (pokemon) => {
-    return firebase
-      .database()
-      .ref("users/" + props.user.uid + "/pokemon/" + pokemon.name)
-      .set(pokemon);
-  };
-  const setExpForUser = async (exp) => {
-    let userData = { experience: exp };
-    return firebase
-      .database()
-      .ref("users/" + props.user.uid + "/userData")
-      .set(userData);
-  };
-
-  const deletePokemon = (pokemon) => {
-    var database = firebase
-      .database()
-      .ref("users/" + props.user.uid + "/pokemon/" + pokemon.name);
-    database.remove();
-  };
-
-  const getRandomPokemon = async () => {
-    const challenger = await initializePokemonForBattle(props.pokemonArray[5]);
-    console.log("CHALLENGER", challenger);
-  };
-
-  return (
-    <Container maxWidth={false} disableGutters>
-      {!timeForBattle && (
-        <>
-          <AppTopNav
-            user={props.user}
-            usersPokemon={usersPokemon}
-            deletePokemon={deletePokemon}
-            setTimeForBattle={setTimeForBattle}
-            logout={logout}
-          />
-          <Box mt={8} p={3}>
-            {!timeForBattle && Object.values(usersPokemon).length < 2 && (
-              <PokemonCardGrid
-                selectPokemon={selectPokemon}
-                usersPokemon={usersPokemon}
-                pokemonArray={pokemonArray}
-              />
-            )}
-            {Object.values(usersPokemon).length === 2 && (
-              <PokemonDashboard
-                pokemonArray={pokemonArray}
-                usersPokemon={usersPokemon}
-                selectPokemon={props.selectPokemon}
-                setTimeForBattle={setTimeForBattle}
-                user={props.user}
-              />
-            )}
-          </Box>
-        </>
-      )}
-      {timeForBattle && Object.values(usersPokemon).length > 1 && (
-        <BattleGround
-          timeForBattle={timeForBattle}
-          setTimeForBattle={setTimeForBattle}
-          setPokemonForUser={setPokemonForUser}
-          setExpForUser={setExpForUser}
-          selectedPokemon={Object.values(usersPokemon)}
-          pokemonTypes={pokemonTypes}
-        />
-      )}
-    </Container>
-  );
-}

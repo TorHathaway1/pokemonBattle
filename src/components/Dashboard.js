@@ -4,12 +4,11 @@ import { Typography, LinearProgress } from "@material-ui/core";
 
 import Grid from "@material-ui/core/Grid";
 import PokemonCard from "../components/PokemonCard";
-import PokemonStats from "../components/PokemonStats";
+import Stats from "./Stats";
 import UserList from "../components/UserList";
 import firebase from "../firebaseConfig";
-import { initializePokemonForBattle } from "../common/pokemonFunctions";
 
-export default function PokemonDashBoard(props) {
+export default function Dashboard(props) {
   const [users, setUsers] = useState({});
   const classes = useStyles();
   useEffect(() => {
@@ -23,15 +22,6 @@ export default function PokemonDashBoard(props) {
         }
       });
   }, []);
-
-  useEffect(() => {
-    getRandomPokemon();
-  }, [props.pokemonArray]);
-
-  const getRandomPokemon = async () => {
-    const challenger = await initializePokemonForBattle(props.pokemonArray[5]);
-    console.log("CHALLENGER", challenger);
-  };
 
   return (
     <div className={classes.root}>
@@ -58,25 +48,34 @@ export default function PokemonDashBoard(props) {
 
 function PokemonCardData(props) {
   const classes = useStyles();
-  let expUntilNextLevel =
-    props.pokemon.species.growth_rate.levels[props.pokemon.level - 1]
-      .experience /
-    props.pokemon.species.growth_rate.levels[props.pokemon.level].experience;
+  const pokemonGrowthRateLevels = props.pokemon.species.growth_rate.levels;
+  const pokemonLevel = props.pokemon.level;
+  let expNeededForCurrLevel =
+    pokemonGrowthRateLevels[pokemonLevel - 1].experience;
+  let expNeededForNextLevel = pokemonGrowthRateLevels[pokemonLevel].experience;
+  let totalExpForPokemon =
+    props.pokemon.experience + props.pokemon.base_experience;
+
+  let totalEXPNeededToLevelUp = expNeededForNextLevel - expNeededForCurrLevel;
+  let totalEXPGainedSinceLastLevelUp =
+    totalExpForPokemon - expNeededForCurrLevel;
 
   return (
     <Grid item xs={12} className={classes.root}>
       <PokemonCard selectPokemon={props.selectPokemon} pokemon={props.pokemon}>
         <Typography variant="h5">lvl {props.pokemon.level}</Typography>
         <LinearProgress
-          style={{ width: "30%", margin: "auto" }}
+          style={{ width: "40%", margin: "auto" }}
           variant="determinate"
-          value={expUntilNextLevel * 100}
+          value={
+            (totalEXPGainedSinceLastLevelUp / totalEXPNeededToLevelUp) * 100
+          }
         />
         <Typography variant="subtitle1" className={classes.title}>
-          {props.pokemon.experience} exp
+          {totalExpForPokemon} exp
         </Typography>
         <Grid container>
-          <PokemonStats stats={props.pokemon.stats} />
+          <Stats stats={props.pokemon.stats} />
         </Grid>
       </PokemonCard>
     </Grid>

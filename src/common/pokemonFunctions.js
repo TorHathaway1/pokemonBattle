@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// initialize pokemon for use inside app
+// initialize and return battle-ready pokemon
 export const initializePokemonForBattle = async (pokemon) => {
   const speciesData = await getSpeciesData(pokemon);
   await insertGrowthRateToSpeciesData(speciesData);
@@ -24,8 +24,8 @@ export const calculatePokemonLevel = async (pokemon) => {
   return level;
 };
 
-// returns all data for a pokemon
-export const getSpeciesData = async (pokemon) => {
+// returns all species information for a given pokemon
+const getSpeciesData = async (pokemon) => {
   return axios
     .get(process.env.REACT_APP_POKEMON_API + "/pokemon-species/" + pokemon.name)
     .then((x) => {
@@ -33,8 +33,8 @@ export const getSpeciesData = async (pokemon) => {
     });
 };
 
-// insert the growth rate into the pokemon species data
-export const insertGrowthRateToSpeciesData = async (speciesData) => {
+// insert the growth rate into the given species data
+const insertGrowthRateToSpeciesData = async (speciesData) => {
   return axios
     .get(
       process.env.REACT_APP_POKEMON_API +
@@ -49,8 +49,8 @@ export const insertGrowthRateToSpeciesData = async (speciesData) => {
     });
 };
 
-// get all move information for each of pokemon's moves
-export const getMovesForPokemon = async (pokemon) => {
+// get all move information for each of a pokemon's given moves
+const getMovesForPokemon = async (pokemon) => {
   const promises = pokemon.moves.map((move, v) => {
     console.log("move", move);
     return axios.get(move.move.url).then(async (response) => {

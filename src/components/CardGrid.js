@@ -3,19 +3,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import Grid from "@material-ui/core/Grid";
 import PokemonCard from "./PokemonCard";
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-    textAlign: "center",
-  },
-  paper: {
-    padding: theme.spacing(2),
-    textAlign: "center",
-    color: theme.palette.text.secondary,
-  },
-}));
-
-export default function PokemonCardGrid(props) {
+export default function CardGrid(props) {
   const classes = useStyles();
 
   return (
@@ -32,3 +20,15 @@ export default function PokemonCardGrid(props) {
     </div>
   );
 }
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    flexGrow: 1,
+    textAlign: "center",
+  },
+  paper: {
+    padding: theme.spacing(2),
+    textAlign: "center",
+    color: theme.palette.text.secondary,
+  },
+}));

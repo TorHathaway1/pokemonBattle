@@ -5,23 +5,8 @@ import Paper from "@material-ui/core/Paper";
 import Avatar from "@material-ui/core/Avatar";
 import TagFacesIcon from "@material-ui/icons/TagFaces";
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: "flex",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    listStyle: "none",
-    padding: theme.spacing(0.5),
-    margin: 0,
-  },
-  chip: {
-    margin: theme.spacing(0.5),
-  },
-}));
-
-export default function PokemonStats(props) {
+export default function Stats(props) {
   const classes = useStyles();
-
   return (
     <Paper component="ul" className={classes.root}>
       {props.stats.map((stat, i) => {
@@ -53,3 +38,17 @@ export default function PokemonStats(props) {
     </Paper>
   );
 }
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: "flex",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    listStyle: "none",
+    padding: theme.spacing(0.5),
+    margin: 0,
+  },
+  chip: {
+    margin: theme.spacing(0.5),
+  },
+}));

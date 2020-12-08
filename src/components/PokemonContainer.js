@@ -13,7 +13,7 @@ import {
 
 import Pokemon from "../components/Pokemon";
 
-import { MOVE_COUNT } from "../constants/pokeVars";
+import { MOVE_COUNT } from "../constants/vars";
 
 function PokemonContainer(props) {
   const [opponent, setOpponent] = useState(null);

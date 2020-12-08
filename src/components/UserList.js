@@ -1,42 +1,18 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
-import ListItemText from "@material-ui/core/ListItemText";
-import Avatar from "@material-ui/core/Avatar";
-import ButtonGroup from "@material-ui/core/ButtonGroup";
-import Grid from "@material-ui/core/Grid";
-import Typography from "@material-ui/core/Typography";
-import Button from "@material-ui/core/Button";
+import {
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemSecondaryAction,
+  ListItemText,
+  Avatar,
+  ButtonGroup,
+  Grid,
+  Button,
+  Divider,
+} from "@material-ui/core";
 import { green, grey } from "@material-ui/core/colors";
-import Divider from "@material-ui/core/Divider";
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 2,
-    // margin: "auto",
-    marginBottom: "20px",
-    marginLeft: "10px",
-    // marginRight: "10px",
-    // width: "100%",
-    // maxWidth: 600,
-    backgroundColor: theme.palette.background.paper,
-    position: "relative",
-    overflow: "auto",
-    maxHeight: 500,
-    overflowX: "hidden",
-  },
-  demo: {
-    backgroundColor: theme.palette.background.paper,
-    padding: "10px",
-    minWidth: "600px",
-  },
-  title: {
-    margin: theme.spacing(4, 0, 2),
-  },
-}));
 
 export default function UserList(props) {
   const classes = useStyles();
@@ -115,3 +91,24 @@ const UserListItem = (props) => {
     </ListItem>
   );
 };
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    flexGrow: 2,
+    marginBottom: "20px",
+    marginLeft: "10px",
+    backgroundColor: theme.palette.background.paper,
+    position: "relative",
+    overflow: "auto",
+    maxHeight: 500,
+    overflowX: "hidden",
+  },
+  demo: {
+    backgroundColor: theme.palette.background.paper,
+    padding: "10px",
+    minWidth: "600px",
+  },
+  title: {
+    margin: theme.spacing(4, 0, 2),
+  },
+}));

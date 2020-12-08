@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import firebase from "../firebaseConfig";
+import React from "react";
 import CloseIcon from "@material-ui/icons/Close";
 import { makeStyles } from "@material-ui/core/styles";
 import {
@@ -8,40 +6,21 @@ import {
   Toolbar,
   Typography,
   IconButton,
-  Container,
-  Box,
   Avatar,
   Button,
-  Chip,
 } from "@material-ui/core";
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-    textAlign: "center",
-  },
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-  medium: {
-    width: theme.spacing(5),
-    height: theme.spacing(5),
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-  },
-  large: {
-    width: theme.spacing(7),
-    height: theme.spacing(7),
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-  },
-}));
+import firebase from "../firebaseConfig";
 
 export default function AppTopNav(props) {
   const { large, medium, title } = useStyles();
+
+  const deletePokemonFromUsersCollection = (pokemon) => {
+    var database = firebase
+      .database()
+      .ref("users/" + props.user.uid + "/pokemon/" + pokemon.name);
+    database.remove();
+  };
+
   return (
     <AppBar style={{ background: "white", color: "black" }} position="fixed">
       <Toolbar>
@@ -54,7 +33,7 @@ export default function AppTopNav(props) {
           .map((p, i) => {
             return (
               <Avatar
-                onClick={() => props.deletePokemon(p)}
+                onClick={() => deletePokemonFromUsersCollection(p)}
                 key={p.name}
                 alt={p.name}
                 className={large}
@@ -82,3 +61,28 @@ export default function AppTopNav(props) {
     </AppBar>
   );
 }
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    flexGrow: 1,
+    textAlign: "center",
+  },
+  menuButton: {
+    marginRight: theme.spacing(2),
+  },
+  title: {
+    flexGrow: 1,
+  },
+  medium: {
+    width: theme.spacing(5),
+    height: theme.spacing(5),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
+  },
+  large: {
+    width: theme.spacing(7),
+    height: theme.spacing(7),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
+  },
+}));
