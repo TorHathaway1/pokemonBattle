@@ -27,6 +27,7 @@ export default function Home(props) {
     Math.random() * maximumNumberOfPokemon
   );
 
+  // fires once
   useEffect(() => {
     setUserOnlineStatus();
     fetchAllPokemonTypes();

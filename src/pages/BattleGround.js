@@ -12,13 +12,15 @@ const randomNumberForBackgroundImgSelection = Math.ceil(
 );
 
 function BattleGround(props) {
-  const [pokemonArray, setPokemonArray] = useState(props.selectedPokemon);
+  const [usersPokemonCollection, setUsersPokemonCollection] = useState(props.selectedPokemon);
   const [battle, setBattle] = useState({});
   const [showGameOverDialog, setShowGameOverDialog] = useState(false)
+  const [expGainedForWinner, setExpGainForWinner] = useState(0)
+  const [winner, setWinner] = useState(null)
 
   useEffect(() => {
     initializeBattle();
-  }, [pokemonArray && props.timeForBattle]);
+  }, [usersPokemonCollection && props.timeForBattle]);
 
   useEffect(() => {
     gameOver();
@@ -26,10 +28,10 @@ function BattleGround(props) {
 
   const initializeBattle = async () => {
     let initialBattle = {};
-    initialBattle[pokemonArray[0].name] = pokemonArray[0];
-    initialBattle[pokemonArray[1].name] = pokemonArray[1];
-    initialBattle[pokemonArray[0].name].health = 100;
-    initialBattle[pokemonArray[1].name].health = 100;
+    initialBattle[usersPokemonCollection[0].name] = usersPokemonCollection[0];
+    initialBattle[usersPokemonCollection[1].name] = usersPokemonCollection[1];
+    initialBattle[usersPokemonCollection[0].name].health = 100;
+    initialBattle[usersPokemonCollection[1].name].health = 100;
     initialBattle.moves = [];
     setBattle(initialBattle);
   };
@@ -44,6 +46,8 @@ function BattleGround(props) {
           pokemonInBattle[winnerIndex],
           pokemonInBattle[loserIndex]
         );
+        setExpGainForWinner(expGained)
+        setWinner(props.selectedPokemon[winnerIndex])
         props.selectedPokemon[winnerIndex].experience =
           props.selectedPokemon[winnerIndex].experience + expGained;
         props.selectedPokemon[winnerIndex].level = await calculatePokemonLevel(
@@ -53,7 +57,6 @@ function BattleGround(props) {
         setExpForUser(expGained);
         setTimeout(() => {
           setShowGameOverDialog(true)
-          // props.setTimeForBattle(false);
         }, 2000);
       }
     });
@@ -165,11 +168,11 @@ function BattleGround(props) {
                 battle={battle}
                 pokemon={p}
                 fainted={p.health === 0}
-                setPokemonArray={setPokemonArray}
+                setPokemonArray={setUsersPokemonCollection}
               />
             );
           })}
-          <GameOverDialog showGameOverDialog={showGameOverDialog} isGameOver={props.setTimeForBattle} />
+          <GameOverDialog showGameOverDialog={showGameOverDialog} isGameOver={props.setTimeForBattle} expGainForWinner={expGainedForWinner} winner={winner} />
     </Container>
   );
 }

@@ -12,6 +12,8 @@ import Home from "./pages/Home";
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+
+  // fires once
   useEffect(() => {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -31,10 +33,8 @@ function App() {
         .signOut()
         .then(function () {
           console.log("success");
-          // Sign-out successful.
         })
         .catch(function (error) {
-          // An error happened.
           console.log("error");
         });
   };
@@ -46,18 +46,11 @@ function App() {
       <Router>
         <Switch>
           {authenticated && (
-              <>
             <Route
               exact
               path="/"
               render={(props) => <Home {...props} user={user} logout={logout} />}
             />
-            <Route
-            exact
-            path="/battle"
-            render={(props) => <Home {...props} user={user} logout={logout} />}
-            />
-            </>
           )}
           <Route exact path="/" render={(props) => <Login />} />
         </Switch>
