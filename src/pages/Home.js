@@ -22,6 +22,7 @@ export default function Home(props) {
   const [usersPokemonCollection, setUsersPokemonCollection] = useState({});
   const [allPokemonTypes, setAllPokemonTypes] = useState([]);
   const [timeForBattle, setTimeForBattle] = useState(false);
+  const [users, setUsers] = useState({});
 
   const randomPokemonIDToStartGroupFrom = Math.ceil(
     Math.random() * maximumNumberOfPokemon
@@ -29,14 +30,31 @@ export default function Home(props) {
 
   // fires once
   useEffect(() => {
+    setUserInfomation();
     setUserOnlineStatus();
     fetchAllPokemonTypes();
     fetchAndSetDataForPokemonArray(
       randomPokemonIDToStartGroupFrom,
       sizeOfPokemonGroupFetched
     );
-    setupUsersPokemonFirebaseListener();
+    setupPokemonFirebaseListener();
+    setupPokemonUsersListener();
   }, []);
+
+  const setUserInfomation = async (exp) => {
+    let userData = {
+      name: firebase.auth().currentUser.displayName,
+      hp: 100,
+      experience: 0,
+      uid: firebase.auth().currentUser.uid,
+      status: "",
+      opponent: "",
+    };
+    return firebase
+      .database()
+      .ref("users/" + props.user.uid + "/userData")
+      .update(userData);
+  };
 
   const fetchAllPokemonTypes = () => {
     let tempTypes = allPokemonTypes;
@@ -110,8 +128,8 @@ export default function Home(props) {
   };
 
   const selectPokemonInDashboard = async (pokemon) => {
-    let p = await initializePokemonForBattle(pokemon);
-    addPokemonToUserInFirebase(p);
+    let initializedPokemon = await initializePokemonForBattle(pokemon);
+    addPokemonToUserInFirebase(initializedPokemon);
   };
 
   const addPokemonToUserInFirebase = async (pokemon) => {
@@ -121,17 +139,30 @@ export default function Home(props) {
       .set(pokemon);
   };
 
-  const setupUsersPokemonFirebaseListener = () => {
+  const setupPokemonFirebaseListener = () => {
     var usersPokemonCollectionFirebaseConnection = firebase
       .database()
-      .ref("users/" + props.user.uid + "/pokemon");
+      .ref("users/" + props.user.uid);
     usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
-      // on change of user's pokemon in firebase, update users pokemon collection in application state
       if (snapshot.val()) {
         const data = snapshot.val();
-        setUsersPokemonCollection(data);
+        setUsersPokemonCollection(data.pokemon);
       } else {
         setUsersPokemonCollection({});
+      }
+    });
+  };
+
+  const setupPokemonUsersListener = () => {
+    var usersPokemonCollectionFirebaseConnection = firebase
+      .database()
+      .ref("users");
+    usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
+      if (snapshot.val()) {
+        const users = snapshot.val();
+        setUsers(users);
+      } else {
+        setUsers({});
       }
     });
   };
@@ -161,6 +192,7 @@ export default function Home(props) {
                 selectPokemon={props.selectPokemon}
                 setTimeForBattle={setTimeForBattle}
                 user={props.user}
+                users={users}
               />
             )}
           </Box>
@@ -174,6 +206,7 @@ export default function Home(props) {
           selectedPokemon={Object.values(usersPokemonCollection)}
           pokemonTypes={allPokemonTypes}
           user={props.user}
+          users={users}
         />
       )}
     </Container>

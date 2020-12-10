@@ -31,21 +31,26 @@ export default function UserList(props) {
           <List>
             <UserListItem
               setTimeForBattle={props.setTimeForBattle}
-              user={"Bot"}
+              user={{ userData: { name: "Bot" } }}
               userOnline={true}
             />
             <Divider />
-            {Object.keys(props.users).map((user, i) => {
-              let userOnline = props.users[user].state === "online";
-              return (
-                <UserListItem
-                  key={user}
-                  setTimeForBattle={props.setTimeForBattle}
-                  userOnline={userOnline}
-                  user={user}
-                  state={props.users[user].state}
-                />
-              );
+            {Object.keys(props.statusOfUsers).map((user, i) => {
+              let userOnline = props.statusOfUsers[user].state === "online";
+              if (user !== props.user.uid) {
+                return (
+                  <UserListItem
+                    key={user}
+                    setTimeForBattle={props.setTimeForBattle}
+                    userOnline={userOnline}
+                    user={props.users[user]}
+                    state={props.statusOfUsers[user].state}
+                    challengeUser={props.challengeUser}
+                  />
+                );
+              } else {
+                return null;
+              }
             })}
           </List>
         </div>
@@ -55,7 +60,8 @@ export default function UserList(props) {
 }
 
 const UserListItem = (props) => {
-  let bot = props.user === "Bot";
+  let bot = props.user.userData.name === "Bot";
+  let currentlyFighting = !bot && props.user.userData.status !== "";
   return (
     <ListItem>
       <ListItemAvatar>
@@ -68,7 +74,7 @@ const UserListItem = (props) => {
         </Avatar>
       </ListItemAvatar>
       <ListItemText
-        primary={props.user}
+        primary={props.user.userData.name}
         secondary={props.state ? props.state : null}
       />
       <ListItemSecondaryAction>
@@ -78,14 +84,13 @@ const UserListItem = (props) => {
           aria-label="contained primary button group"
         >
           <Button
-            disabled={!props.userOnline}
+            disabled={!props.userOnline || (currentlyFighting && !bot)}
             variant="outlined"
             color="secondary"
-            onClick={() => props.setTimeForBattle()}
+            onClick={() => props.challengeUser(props.user)}
           >
-            Fight
+            {currentlyFighting ? props.user.userData.status : "Fight"}
           </Button>
-          {/*<Button color={"secondary"}>X</Button>*/}
         </ButtonGroup>
       </ListItemSecondaryAction>
     </ListItem>

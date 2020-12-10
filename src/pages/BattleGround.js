@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container } from "@material-ui/core";
 
 import PokemonContainer from "../components/PokemonContainer";
-import GameOverDialog from "../components/GameOverDialog"
+import GameOverDialog from "../components/GameOverDialog";
 import { calculatePokemonLevel } from "../common/pokemonFunctions";
 import { backgroundImgArray } from "../constants/vars";
 import firebase from "../firebaseConfig";
@@ -12,11 +12,14 @@ const randomNumberForBackgroundImgSelection = Math.ceil(
 );
 
 function BattleGround(props) {
-  const [usersPokemonCollection, setUsersPokemonCollection] = useState(props.selectedPokemon);
+  const db = firebase.database();
+  const [usersPokemonCollection, setUsersPokemonCollection] = useState(
+    props.selectedPokemon
+  );
   const [battle, setBattle] = useState({});
-  const [showGameOverDialog, setShowGameOverDialog] = useState(false)
-  const [expGainedForWinner, setExpGainForWinner] = useState(0)
-  const [winner, setWinner] = useState(null)
+  const [showGameOverDialog, setShowGameOverDialog] = useState(false);
+  const [expGainedForWinner, setExpGainForWinner] = useState(0);
+  const [winner, setWinner] = useState(null);
 
   useEffect(() => {
     initializeBattle();
@@ -33,7 +36,25 @@ function BattleGround(props) {
     initialBattle[usersPokemonCollection[0].name].health = 100;
     initialBattle[usersPokemonCollection[1].name].health = 100;
     initialBattle.moves = [];
+
     setBattle(initialBattle);
+    insertBattleIntoDb(initialBattle);
+    initializeFirebaseBattleListener();
+  };
+
+  const insertBattleIntoDb = async (battle) => {
+    return db.ref("battles/" + props.user.uid).set(battle);
+  };
+
+  const initializeFirebaseBattleListener = () => {
+    let battleRef = firebase.database().ref("battles/" + props.user.uid);
+    battleRef.on("value", (snapshot) => {
+      let updatedBattle = snapshot.val();
+      let firstMoveHasBeenMade = Object.values(updatedBattle).length > 2;
+      if (firstMoveHasBeenMade) {
+        setBattle(updatedBattle);
+      }
+    });
   };
 
   const gameOver = () => {
@@ -42,12 +63,13 @@ function BattleGround(props) {
     let winnerIndex = pokemonInBattle.findIndex((x) => x.health !== 0);
     pokemonInBattle.map(async (p, i) => {
       if (p.health === 0) {
+        resetEachUsersFightingStatus();
         let expGained = calculateExperience(
           pokemonInBattle[winnerIndex],
           pokemonInBattle[loserIndex]
         );
-        setExpGainForWinner(expGained)
-        setWinner(props.selectedPokemon[winnerIndex])
+        setExpGainForWinner(expGained);
+        setWinner(props.selectedPokemon[winnerIndex]);
         props.selectedPokemon[winnerIndex].experience =
           props.selectedPokemon[winnerIndex].experience + expGained;
         props.selectedPokemon[winnerIndex].level = await calculatePokemonLevel(
@@ -56,26 +78,26 @@ function BattleGround(props) {
         props.setPokemonForUser(props.selectedPokemon[winnerIndex]);
         setExpForUser(expGained);
         setTimeout(() => {
-          setShowGameOverDialog(true)
+          setShowGameOverDialog(true);
         }, 2000);
       }
     });
   };
 
   const attack = (mvDam, pokemon, opponent, isSuccessful) => {
-    let tempBattle = battle;
-    let opponentNewHealth = tempBattle[opponent.name].health - mvDam;
+    let updatedBattle = battle;
+    let opponentNewHealth = updatedBattle[opponent.name].health - mvDam;
     if (opponentNewHealth < 0) {
       opponentNewHealth = 0;
     }
-    tempBattle[opponent.name].health = opponentNewHealth;
-    tempBattle.moves.push({
+    updatedBattle[opponent.name].health = opponentNewHealth;
+    updatedBattle.moves.push({
       attacker: pokemon.name,
       defender: opponent.name,
       damage: mvDam,
       success: isSuccessful,
     });
-    setBattle({ ...tempBattle });
+    insertBattleIntoDb({ ...updatedBattle });
   };
 
   const setExpForUser = async (exp) => {
@@ -83,7 +105,17 @@ function BattleGround(props) {
     return firebase
       .database()
       .ref("users/" + props.user.uid + "/userData")
-      .set(userData);
+      .update(userData);
+  };
+
+  const resetEachUsersFightingStatus = () => {
+    let updateBoth = { opponent: "", status: "" };
+    db.ref(
+      "users/" + props.users[props.user.uid].userData.uid + "/userData"
+    ).update(updateBoth);
+    db.ref(
+      "users/" + props.users[props.user.uid].userData.fighting + "/userData"
+    ).update(updateBoth);
   };
 
   const calculateExperience = (pokemon, opponent) => {
@@ -172,7 +204,12 @@ function BattleGround(props) {
               />
             );
           })}
-          <GameOverDialog showGameOverDialog={showGameOverDialog} isGameOver={props.setTimeForBattle} expGainForWinner={expGainedForWinner} winner={winner} />
+      <GameOverDialog
+        showGameOverDialog={showGameOverDialog}
+        isGameOver={props.setTimeForBattle}
+        expGainForWinner={expGainedForWinner}
+        winner={winner}
+      />
     </Container>
   );
 }
