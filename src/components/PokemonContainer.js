@@ -16,7 +16,7 @@ import Pokemon from "../components/Pokemon";
 import { MOVE_COUNT } from "../constants/vars";
 
 function PokemonContainer(props) {
-  const [opponent, setOpponent] = useState(null);
+  const [opponent, setOpponent] = useState(props.opponent);
   const [attacking, setAttacking] = useState(false);
   const [open, setOpen] = React.useState(false);
 
@@ -25,16 +25,8 @@ function PokemonContainer(props) {
   };
 
   useEffect(() => {
-    let opponent;
-    Object.values(props.battle)
-      .slice(0, 2)
-      .forEach((p, i) => {
-        if (p.name !== props.pokemon.name) {
-          opponent = p;
-        }
-      });
-    setOpponent(opponent);
-  }, [props.pokemon]);
+    setOpponent(props.opponent);
+  }, [props.opponent]);
 
   const style = {
     position: "absolute",
@@ -49,16 +41,16 @@ function PokemonContainer(props) {
 
   const statsContainer = {
     position: "absolute",
-    border: "solid 2px black",
-    margin: 60,
+    // border: "solid 2px black",
+    // margin: 60,
     padding: 20,
     fontSize: "24px",
     minWidth: "600px",
     minHeight: "100px",
     fontWeight: 700,
     background: "white",
-    borderRadius: "5px",
-    boxShadow: "20px 20px 20px #686868, -20px -20px 20px #8c8c8c",
+    borderRadius: "0px 0px  5px",
+    // boxShadow: "20px 20px 20px #686868, -20px -20px 20px #8c8c8c",
     zIndex: 1000,
   };
 
@@ -76,49 +68,12 @@ function PokemonContainer(props) {
     buttonGroupStyle.right = 0;
   }
 
-  const attack = (mv, pokemon, opponent) => {
+  const attack = (mv, pokemon, opponent, me) => {
     let success = true;
-    let mvDam = calculateDamage(mv, pokemon, opponent);
+    let pokemonArr = Object.values(props.battle);
+    opponent = pokemonArr.find((p) => p.pokemon && !p.pokemon[pokemon.name]);
     setAttacking(true);
-    props.attack(mvDam, pokemon, opponent, success);
-  };
-
-  const calculateDamage = (mv, pokemon, opponent) => {
-    // ((2A/5+2)*B*C)/D)/50)+2)*X)*Y/10)*Z)/255
-    //
-    // A = attacker's Level
-    // B = attacker's Attack or Special
-    // C = attack Power
-    // D = defender's Defense or Special
-    // X = same-Type attack bonus (1 or 1.5)
-    // Y = Type modifiers (40, 20, 10, 5, 2.5, or 0)
-    // Z = a random number between 217 and 255
-
-    let attackerLevelx2 = pokemon.level * 2;
-    let attackerAttackLevel = pokemon.stats[1].base_stat;
-    let movePower = mv.power ? mv.power : 0;
-    let defenderDefenseLevel = opponent.stats[2].base_stat;
-
-    let sameTypeBonus = 1;
-    if (pokemon.types.findIndex((x) => x.type.name === mv.type.name)) {
-      sameTypeBonus = 1.5;
-    }
-
-    let randomInt = Math.floor(Math.random() * (255 - 217 + 1)) + 217;
-
-    let a =
-      ((attackerLevelx2 / 5 + 2) * attackerAttackLevel * movePower) /
-      defenderDefenseLevel;
-
-    let typeModifier = 4;
-
-    let damage = Math.ceil(
-      ((((a / 50 + 2) * sameTypeBonus * typeModifier) / 5) * randomInt) / 255
-    );
-
-    console.log(damage + " damage dealt.");
-
-    return damage;
+    props.attack(mv, pokemon, Object.values(opponent.pokemon)[0], success);
   };
 
   useEffect(() => {
@@ -140,28 +95,29 @@ function PokemonContainer(props) {
           size="small"
           aria-label="outlined primary button group"
         >
-          {props.pokemon.moves.slice(0, MOVE_COUNT).map((mv, i) => {
-            return (
-              <Button
-                key={props.pokemon.name + i}
-                size="small"
-                onClick={() => attack(mv, props.pokemon, opponent)}
-                disabled={
-                  props.fainted ||
-                  props.battle.moves[props.battle.moves.length - 1]
-                    ? props.battle.moves[props.battle.moves.length - 1]
-                        .attacker === props.pokemon.name
-                    : false
-                }
-              >
-                {mv.move.name} - {mv.accuracy}
-              </Button>
-            );
-          })}
+          {props.pokemon &&
+            props.pokemon.moves &&
+            props.pokemon.moves.slice(0, MOVE_COUNT).map((mv, i) => {
+              return (
+                <Button
+                  key={props.pokemon.name + i}
+                  size="small"
+                  onClick={() => attack(mv, props.pokemon, opponent, props.me)}
+                  disabled={
+                    props.fainted ||
+                    (props.battle.moves &&
+                      props.battle.moves[props.battle.moves.length - 1])
+                      ? props.battle.moves[props.battle.moves.length - 1]
+                          .attacker === props.pokemon.name
+                      : false
+                  }
+                >
+                  {mv.move.name} - {mv.accuracy}
+                </Button>
+              );
+            })}
         </ButtonGroup>
-        <Button size="small" onClick={() => props.setSelectedPokemon([])}>
-          {props.pokemon.name}
-        </Button>
+        <Button size="small">{props.pokemon.name}</Button>
         <div style={{ position: "absolute", width: "90%", bottom: 0 }}>
           <LinearProgressWithLabel value={props.pokemon.health} />
         </div>
@@ -191,10 +147,11 @@ function PokemonContainer(props) {
 function LinearProgressWithLabel(props) {
   return (
     <Box display="flex" alignItems="center">
-      <Box width="100%" mr={1}>
+      <Box width="100%" m={1}>
         <LinearProgress
           style={{ height: 10 }}
           variant="determinate"
+          value={props.value ? props.value : 100}
           {...props}
         />
       </Box>

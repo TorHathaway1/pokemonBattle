@@ -2,6 +2,67 @@ import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import clsx from "clsx";
 
+export default function Pokemon(props) {
+  const classes = useStyles();
+  const [pokemon] = React.useState(props.pokemon);
+  const [attacking, setAttacking] = React.useState(false);
+
+  // setup pokemon assets
+  React.useEffect(() => {
+    // console.log("poke change", pokemon);
+  }, [pokemon]);
+
+  let opponent = {
+    position: "absolute",
+    left: "70vw",
+    bottom: "50vh",
+    height: "30vh",
+  };
+
+  let homeTeam = {
+    position: "absolute",
+    left: "10vw",
+    bottom: "15vh",
+    height: "40vh",
+  };
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setAttacking(false);
+    }, 550);
+    return () => clearTimeout(timer);
+  }, [attacking]);
+
+  return (
+    <img
+      style={props.me ? homeTeam : opponent}
+      className={clsx(
+        props.attacking
+          ? props.me
+            ? classes.attackOpponent
+            : classes.opponentAttack
+          : props.pokemon.health === 0
+          ? classes.receiveDamage
+          : null
+      )}
+      src={
+        pokemon &&
+        pokemon.sprites &&
+        pokemon.sprites.versions["generation-v"] &&
+        pokemon.sprites.versions["generation-v"]["black-white"].animated[
+          !props.me ? "front_default" : "back_default"
+        ]
+          ? pokemon.sprites.versions["generation-v"]["black-white"].animated[
+              !props.me ? "front_default" : "back_default"
+            ]
+          : pokemon.sprites
+          ? pokemon.sprites[!props.me ? "front_default" : "back_default"]
+          : ""
+      }
+    />
+  );
+}
+
 const useStyles = makeStyles((theme) => ({
   root: {
     maxWidth: 345,
@@ -107,61 +168,3 @@ const useStyles = makeStyles((theme) => ({
     },
   },
 }));
-
-export default function Pokemon(props) {
-  const classes = useStyles();
-  const [pokemon, setPokemon] = React.useState(props.pokemon);
-  const [attacking, setAttacking] = React.useState(false);
-
-  // setup pokemon assets
-  React.useEffect(() => {
-    // console.log("poke change", pokemon);
-  }, [pokemon]);
-
-  let opponent = {
-    position: "absolute",
-    left: "70vw",
-    bottom: "50vh",
-    height: "30vh",
-  };
-
-  let homeTeam = {
-    position: "absolute",
-    left: "10vw",
-    bottom: "15vh",
-    height: "40vh",
-  };
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setAttacking(false);
-    }, 550);
-    return () => clearTimeout(timer);
-  }, [attacking]);
-
-  return (
-    <img
-      style={props.me ? homeTeam : opponent}
-      className={clsx(
-        props.attacking
-          ? props.i !== 0
-            ? classes.attackOpponent
-            : classes.opponentAttack
-          : props.pokemon.health === 0
-          ? classes.receiveDamage
-          : null
-      )}
-      src={
-        pokemon &&
-        pokemon.sprites.versions["generation-v"] &&
-        pokemon.sprites.versions["generation-v"]["black-white"].animated[
-          props.i === 0 ? "front_default" : "back_default"
-        ]
-          ? pokemon.sprites.versions["generation-v"]["black-white"].animated[
-              props.i === 0 ? "front_default" : "back_default"
-            ]
-          : pokemon.sprites[props.i === 0 ? "front_default" : "back_default"]
-      }
-    />
-  );
-}

@@ -14,6 +14,7 @@ import { Skeleton } from "@material-ui/lab";
 const useStyles = makeStyles((theme) => ({
   media: {
     height: 500,
+    width: "100%",
   },
 }));
 

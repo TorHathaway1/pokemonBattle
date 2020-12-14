@@ -12,6 +12,7 @@ import {
   Button,
   Divider,
 } from "@material-ui/core";
+import AdbIcon from "@material-ui/icons/Adb";
 import { green, grey } from "@material-ui/core/colors";
 
 export default function UserList(props) {
@@ -26,6 +27,7 @@ export default function UserList(props) {
         alignItems="center"
         xs={12}
         sm={12}
+        item={true}
       >
         <div className={classes.demo}>
           <List>
@@ -33,6 +35,7 @@ export default function UserList(props) {
               setTimeForBattle={props.setTimeForBattle}
               user={{ userData: { name: "Bot" } }}
               userOnline={true}
+              challengeBot={props.challengeBot}
             />
             <Divider />
             {Object.keys(props.statusOfUsers).map((user, i) => {
@@ -70,7 +73,7 @@ const UserListItem = (props) => {
             background: props.userOnline && !bot ? green[300] : grey[350],
           }}
         >
-          {bot ? "b" : null}
+          {bot ? <AdbIcon /> : null}
         </Avatar>
       </ListItemAvatar>
       <ListItemText
@@ -87,7 +90,11 @@ const UserListItem = (props) => {
             disabled={!props.userOnline || (currentlyFighting && !bot)}
             variant="outlined"
             color="secondary"
-            onClick={() => props.challengeUser(props.user)}
+            onClick={
+              bot
+                ? () => props.challengeBot()
+                : () => props.challengeUser(props.user)
+            }
           >
             {currentlyFighting ? props.user.userData.status : "Fight"}
           </Button>

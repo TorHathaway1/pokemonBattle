@@ -17,6 +17,8 @@ import {
   totalNumberOfPokemonTypes,
 } from "../constants/vars";
 
+const db = firebase.database();
+
 export default function Home(props) {
   const [pokemonArray, setPokemonArray] = useState([]);
   const [usersPokemonCollection, setUsersPokemonCollection] = useState({});
@@ -30,7 +32,8 @@ export default function Home(props) {
 
   // fires once
   useEffect(() => {
-    setUserInfomation();
+    resetUsersBattleStatuses();
+    setupPokemonUsersListener();
     setUserOnlineStatus();
     fetchAllPokemonTypes();
     fetchAndSetDataForPokemonArray(
@@ -38,10 +41,35 @@ export default function Home(props) {
       sizeOfPokemonGroupFetched
     );
     setupPokemonFirebaseListener();
-    setupPokemonUsersListener();
   }, []);
 
-  const setUserInfomation = async (exp) => {
+  const resetUsersBattleStatuses = () => {
+    let updateUser = { status: "", opponent: "", battleUID: "" };
+    db.ref("users/" + props.user.uid + "/userData").update(updateUser);
+  };
+
+  const setupPokemonUsersListener = () => {
+    var usersPokemonCollectionFirebaseConnection = firebase
+      .database()
+      .ref("users");
+    usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
+      if (snapshot.val()) {
+        const users = snapshot.val();
+        setUsers(users);
+      } else {
+        setUsers({});
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (users.length > 0) {
+      console.log("users over 0");
+      setUserInformation();
+    }
+  }, [users.length > 0]);
+
+  const setUserInformation = () => {
     let userData = {
       name: firebase.auth().currentUser.displayName,
       hp: 100,
@@ -49,6 +77,8 @@ export default function Home(props) {
       uid: firebase.auth().currentUser.uid,
       status: "",
       opponent: "",
+      battleUID: "",
+      photoURL: firebase.auth().currentUser.photoURL,
     };
     return firebase
       .database()
@@ -129,7 +159,10 @@ export default function Home(props) {
 
   const selectPokemonInDashboard = async (pokemon) => {
     let initializedPokemon = await initializePokemonForBattle(pokemon);
-    addPokemonToUserInFirebase(initializedPokemon);
+    addPokemonToUserInFirebase({
+      ...initializedPokemon,
+      trainerUID: props.user.uid,
+    });
   };
 
   const addPokemonToUserInFirebase = async (pokemon) => {
@@ -146,23 +179,11 @@ export default function Home(props) {
     usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
       if (snapshot.val()) {
         const data = snapshot.val();
-        setUsersPokemonCollection(data.pokemon);
+        if (data.pokemon) {
+          setUsersPokemonCollection(data.pokemon);
+        }
       } else {
         setUsersPokemonCollection({});
-      }
-    });
-  };
-
-  const setupPokemonUsersListener = () => {
-    var usersPokemonCollectionFirebaseConnection = firebase
-      .database()
-      .ref("users");
-    usersPokemonCollectionFirebaseConnection.on("value", (snapshot) => {
-      if (snapshot.val()) {
-        const users = snapshot.val();
-        setUsers(users);
-      } else {
-        setUsers({});
       }
     });
   };
@@ -179,18 +200,19 @@ export default function Home(props) {
           />
           <Box mt={8} p={3}>
             {!timeForBattle &&
-              Object.values(usersPokemonCollection).length < 2 && (
+              Object.values(usersPokemonCollection).length < 1 && (
                 <CardGrid
                   selectPokemon={selectPokemonInDashboard}
                   usersPokemon={usersPokemonCollection}
                   pokemonArray={pokemonArray}
                 />
               )}
-            {Object.values(usersPokemonCollection).length === 2 && (
+            {Object.values(usersPokemonCollection).length === 1 && (
               <PokemonDashboard
                 usersPokemon={usersPokemonCollection}
                 selectPokemon={props.selectPokemon}
                 setTimeForBattle={setTimeForBattle}
+                pokemonArray={pokemonArray}
                 user={props.user}
                 users={users}
               />
@@ -198,13 +220,14 @@ export default function Home(props) {
           </Box>
         </>
       )}
-      {timeForBattle && Object.values(usersPokemonCollection).length > 1 && (
+      {timeForBattle && Object.values(usersPokemonCollection).length === 1 && (
         <BattleGround
           timeForBattle={timeForBattle}
           setTimeForBattle={setTimeForBattle}
           setPokemonForUser={addPokemonToUserInFirebase}
           selectedPokemon={Object.values(usersPokemonCollection)}
           pokemonTypes={allPokemonTypes}
+          pokemonArray={pokemonArray}
           user={props.user}
           users={users}
         />

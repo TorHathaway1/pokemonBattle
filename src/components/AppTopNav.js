@@ -1,13 +1,12 @@
 import React from "react";
-import CloseIcon from "@material-ui/icons/Close";
 import { makeStyles } from "@material-ui/core/styles";
 import {
   AppBar,
   Toolbar,
   Typography,
-  IconButton,
   Avatar,
   Button,
+  LinearProgress,
 } from "@material-ui/core";
 import firebase from "../firebaseConfig";
 
@@ -28,6 +27,7 @@ export default function AppTopNav(props) {
         <Typography variant="h6" className={title}>
           {props.user && props.user.displayName}
         </Typography>
+        <LinearProgress />
         {Object.values(props.usersPokemon)
           .splice(0, 3)
           .map((p, i) => {
@@ -45,18 +45,13 @@ export default function AppTopNav(props) {
               />
             );
           })}
-        {Object.values(props.usersPokemon).length === 2 && (
-          <Button
-            color="secondary"
-            variant={"outlined"}
-            onClick={() => props.setTimeForBattle(true)}
-          >
-            Fight
-          </Button>
-        )}
-        <IconButton color="inherit" onClick={() => props.logout()}>
-          <CloseIcon />
-        </IconButton>
+        <Button
+          variant={"outlined"}
+          color={"secondary"}
+          onClick={() => props.logout()}
+        >
+          Logout
+        </Button>
       </Toolbar>
     </AppBar>
   );

@@ -19,16 +19,10 @@ export default function GameOverDialog(props) {
   const classes = useStyles();
   const [open, setOpen] = React.useState(props.showGameOverDialog);
 
-  const handleClose = (value) => {
+  const handleClose = () => {
     setOpen(false);
     props.isGameOver(false);
   };
-
-  const handleListItemClick = (value) => {
-    handleClose(value);
-  };
-
-  console.log(props.winner);
 
   return (
     <Dialog

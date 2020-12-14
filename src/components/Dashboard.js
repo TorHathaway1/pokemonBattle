@@ -1,24 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { Typography, LinearProgress } from "@material-ui/core";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogActions from "@material-ui/core/DialogActions";
-import Dialog from "@material-ui/core/Dialog";
 
 import Grid from "@material-ui/core/Grid";
 import PokemonCard from "../components/PokemonCard";
 import Stats from "./Stats";
 import UserList from "../components/UserList";
+import PreBattleDialog from "../components/PreBattleDialogue";
 import firebase from "../firebaseConfig";
-import Button from "@material-ui/core/Button";
+
+import { initializePokemonForBattle } from "../common/pokemonFunctions";
 
 const db = firebase.database();
 
 export default function Dashboard(props) {
+  const classes = useStyles();
   const [statusOfUsers, setStatusOfUsers] = useState({});
   const [challenger, setChallenger] = useState(false);
-  const classes = useStyles();
 
   useEffect(() => {
     db.ref("status").on("value", (x) => {
@@ -31,23 +29,33 @@ export default function Dashboard(props) {
 
   useEffect(() => {
     let currentUser = props.users[props.user.uid];
+    const ACCEPTED = "accepted";
     if (
       currentUser &&
       currentUser.userData.opponent !== "" &&
-      currentUser.userData.status === "accepted" &&
-      props.users[currentUser.userData.opponent].userData.status === "accepted"
+      currentUser.userData.status === ACCEPTED &&
+      props.users[currentUser.userData.opponent].userData.status === ACCEPTED
     ) {
-      setFightingStatusForTrainers();
+      setFightingStatusForTrainer(
+        props.users[props.user.uid].userData.opponent
+      );
+      setFightingStatusForTrainer(props.user.uid);
       props.setTimeForBattle(true);
     }
   }, [props.users[props.user.uid]]);
 
-  const challengeUser = (challengee) => {
+  const challengeUser = async (challengee) => {
     setChallenger(true);
-    let updateOpponent = { status: "pending", opponent: props.user.uid };
+    const battleKey = await createAndInsertP2PBattleIntoDB(challengee);
+    let updateOpponent = {
+      status: "pending",
+      opponent: props.user.uid,
+      battleUID: battleKey,
+    };
     let updateUser = {
       status: "pending",
       opponent: challengee.userData.uid,
+      battleUID: battleKey,
     };
     db.ref("users/" + challengee.userData.uid + "/userData").update(
       updateOpponent
@@ -64,33 +72,60 @@ export default function Dashboard(props) {
   };
 
   const denyChallenge = () => {
+    db.ref("battles/" + props.users[props.user.uid].userData.battleUID)
+      .remove()
+      .then((response) => {
+        console.log("deleted");
+      });
     setChallenger(false);
-    let updateOpponent = { status: "", opponent: "" };
-    let updateUser = { status: "", opponent: "" };
+    let updateOpponent = { status: "", opponent: "", battleUID: "" };
+    let updateUser = { status: "", opponent: "", battleUID: "" };
     db.ref(
       "users/" + props.users[props.user.uid].userData.opponent + "/userData"
     ).update(updateOpponent);
     db.ref("users/" + props.user.uid + "/userData").update(updateUser);
   };
 
-  const setFightingStatusForTrainers = () => {
-    console.log(props.users[props.user.uid]);
-    let updateOpponent = { status: "fighting" };
+  const setFightingStatusForTrainer = (userUID) => {
     let updateUser = { status: "fighting" };
-    db.ref(
-      "users/" + props.users[props.user.uid].userData.opponent + "/userData"
-    ).update(updateOpponent);
+    db.ref("users/" + userUID + "/userData").update(updateUser);
+  };
+
+  const createAndInsertP2PBattleIntoDB = (challengee) => {
+    let battle = {
+      [props.users[props.user.uid].userData.uid]: props.users[props.user.uid],
+      [challengee.userData.uid]: challengee,
+    };
+    let battleRef = db.ref("battles/").push();
+    battleRef.set(battle);
+    return battleRef.key;
+  };
+
+  const challengeBot = async () => {
+    let initializedPokemon = await initializePokemonForBattle(
+      props.pokemonArray[Math.ceil(Math.random() * 20)]
+    );
+    const botBattleUID = createAndInsertP2PBattleIntoDB({
+      pokemon: {
+        [initializedPokemon.name]: { ...initializedPokemon, trainerUID: "bot" },
+      },
+      userData: { uid: "bot" },
+    });
+    let updateUser = { battleUID: botBattleUID };
+    setFightingStatusForTrainer(props.user.uid);
     db.ref("users/" + props.user.uid + "/userData").update(updateUser);
+    props.setTimeForBattle(true);
   };
 
   return (
     <div className={classes.root}>
-      <Grid container xs={12}>
+      <Grid item={true} container xs={12}>
         <Grid item container xs={6}>
           {Object.values(props.usersPokemon).map((p, i) => {
             return (
               <Grid
-                item
+                item={true}
+                key={p.name}
                 xs={Object.keys(props.usersPokemon).length === 2 ? 6 : 12}
               >
                 <PokemonCardData pokemon={p} key={p.name} />
@@ -100,11 +135,12 @@ export default function Dashboard(props) {
         </Grid>
         <Grid item xs={6}>
           <UserList
-            setTimeForBattle={props.setTimeForBattle}
             statusOfUsers={statusOfUsers}
             user={props.user}
             users={props.users}
             challengeUser={challengeUser}
+            challengeBot={challengeBot}
+            setTimeForBattle={props.setTimeForBattle}
           />
         </Grid>
       </Grid>
@@ -112,7 +148,10 @@ export default function Dashboard(props) {
         challenger={challenger}
         open={
           props.users[props.user.uid] &&
+          props.users[props.user.uid].userData &&
           props.users[props.user.uid].userData.status === "pending"
+            ? true
+            : false
         }
         user={props.users[props.user.uid]}
         users={props.users}
@@ -156,58 +195,6 @@ function PokemonCardData(props) {
         </Grid>
       </PokemonCard>
     </Grid>
-  );
-}
-
-function PreBattleDialog(props) {
-  const [open, setOpen] = React.useState(props.open);
-
-  const handleAcceptChallenge = (value) => {
-    setOpen(false);
-    props.acceptChallenge();
-  };
-
-  const handleDenyChallenge = (value) => {
-    setOpen(false);
-    props.denyChallenge();
-  };
-
-  return (
-    <Dialog
-      onClose={handleDenyChallenge}
-      aria-labelledby="simple-dialog-title"
-      open={props.open}
-    >
-      <DialogTitle id="customized-dialog-title" onClose={handleDenyChallenge}>
-        {props.challenger ? "Waiting on acceptance" : "You've been challenged!"}
-      </DialogTitle>
-      <DialogContent dividers>
-        {props.challenger
-          ? "Waiting on acceptance from"
-          : "Would you like to battle"}{" "}
-        <b>
-          {props.user &&
-            props.user.userData.opponent &&
-            props.users[props.user.userData.opponent].userData.name}
-        </b>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          variant="outlined"
-          onClick={handleAcceptChallenge}
-          color="default"
-        >
-          Accept
-        </Button>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={handleDenyChallenge}
-        >
-          Deny
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }
 
