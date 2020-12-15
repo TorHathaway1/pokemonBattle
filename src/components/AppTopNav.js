@@ -27,7 +27,9 @@ export default function AppTopNav(props) {
         <Typography variant="h6" className={title}>
           {props.user && props.user.displayName}
         </Typography>
-        <LinearProgress />
+        {/*<div className={title}>*/}
+        {/*  <LinearProgress className={title} variant="determinate" value={50} />*/}
+        {/*</div>*/}
         {Object.values(props.usersPokemon)
           .splice(0, 3)
           .map((p, i) => {

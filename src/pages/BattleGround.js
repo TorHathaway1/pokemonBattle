@@ -35,6 +35,12 @@ function BattleGround(props) {
     gameOver();
   }, [battle]);
 
+  useEffect(() => {
+    if (battle.moves) {
+      console.log("attacker", battle.moves[battle.moves.length - 1].attacker);
+    }
+  }, [battle.moves]);
+
   const insertBattleIntoDb = async (battle) => {
     return db
       .ref("battles/" + props.users[props.user.uid].userData.battleUID)
@@ -163,6 +169,12 @@ function BattleGround(props) {
             pokemonTypes={props.pokemonTypes}
             key={pokemon.name}
             attack={attack}
+            attacking={
+              battle.moves
+                ? battle.moves[battle.moves.length - 1].attacker ===
+                  pokemon.name
+                : false
+            }
             battle={battle}
             pokemon={pokemon}
             opponent={opponent}

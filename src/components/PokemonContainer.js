@@ -25,6 +25,12 @@ function PokemonContainer(props) {
   };
 
   useEffect(() => {
+    if (props.battle.moves) {
+      console.log("moves!", props.battle.moves);
+    }
+  }, [props.battle.moves]);
+
+  useEffect(() => {
     setOpponent(props.opponent);
   }, [props.opponent]);
 
@@ -124,7 +130,7 @@ function PokemonContainer(props) {
       </div>
       <Pokemon
         me={props.me}
-        attacking={attacking}
+        attacking={props.attacking}
         pokemon={props.pokemon}
         i={props.me}
       />
