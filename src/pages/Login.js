@@ -1,7 +1,7 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { Paper, Box, Typography, Button, Container } from "@material-ui/core";
-import bg from "../images/ro5bn3v.png";
+import bg from "../images/pokemon_map_bg.png";
 
 import firebase from "../firebaseConfig";
 

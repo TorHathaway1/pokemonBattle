@@ -14,6 +14,7 @@ import {
 } from "@material-ui/core";
 import AdbIcon from "@material-ui/icons/Adb";
 import { green, grey } from "@material-ui/core/colors";
+import { renderUserAvatar } from "../common/userFunctions";
 
 export default function UserList(props) {
   const classes = useStyles();
@@ -72,6 +73,7 @@ const UserListItem = (props) => {
           style={{
             background: props.userOnline && !bot ? green[300] : grey[350],
           }}
+          src={!bot ? renderUserAvatar(props.user) : null}
         >
           {bot ? <AdbIcon /> : null}
         </Avatar>

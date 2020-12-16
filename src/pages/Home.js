@@ -16,6 +16,7 @@ import {
   sizeOfPokemonGroupFetched,
   totalNumberOfPokemonTypes,
 } from "../constants/vars";
+import UserProfileCard from "../components/UserProfileCard";
 
 const db = firebase.database();
 
@@ -25,10 +26,20 @@ export default function Home(props) {
   const [allPokemonTypes, setAllPokemonTypes] = useState([]);
   const [timeForBattle, setTimeForBattle] = useState(false);
   const [users, setUsers] = useState({});
+  const [avatarSettings, setAvatarSettings] = useState(null);
 
   const randomPokemonIDToStartGroupFrom = Math.ceil(
     Math.random() * maximumNumberOfPokemon
   );
+
+  useEffect(() => {
+    if (
+      users[props.user.uid] &&
+      users[props.user.uid].userData.avatarSettings
+    ) {
+      setAvatarSettings(users[props.user.uid].userData.avatarSettings);
+    }
+  }, [users[props.user.uid]]);
 
   // fires once
   useEffect(() => {
@@ -64,7 +75,6 @@ export default function Home(props) {
 
   useEffect(() => {
     if (users.length > 0) {
-      console.log("users over 0");
       setUserInformation();
     }
   }, [users.length > 0]);
@@ -80,6 +90,17 @@ export default function Home(props) {
       battleUID: "",
       photoURL: firebase.auth().currentUser.photoURL,
     };
+    return firebase
+      .database()
+      .ref("users/" + props.user.uid + "/userData")
+      .update(userData);
+  };
+
+  const setUserProfile = (avatarSettings) => {
+    let userData = {
+      avatarSettings: avatarSettings,
+    };
+    setAvatarSettings(avatarSettings);
     return firebase
       .database()
       .ref("users/" + props.user.uid + "/userData")
@@ -190,33 +211,40 @@ export default function Home(props) {
 
   return (
     <Container maxWidth={false} disableGutters>
-      {!timeForBattle && (
+      {!timeForBattle && users && (
         <>
           <AppTopNav
-            user={props.user}
+            user={users[props.user.uid]}
+            userPhoto={props.user.photoURL ? props.user.photoURL : null}
             usersPokemon={usersPokemonCollection}
             setTimeForBattle={setTimeForBattle}
             logout={props.logout}
           />
           <Box mt={8} p={3}>
+            {!avatarSettings && !users[props.user.uid] && "loading"}
+            {!avatarSettings && users[props.user.uid] && (
+              <UserProfileCard setUserProfile={setUserProfile} />
+            )}
             {!timeForBattle &&
-              Object.values(usersPokemonCollection).length < 1 && (
+              Object.values(usersPokemonCollection).length < 1 &&
+              avatarSettings && (
                 <CardGrid
                   selectPokemon={selectPokemonInDashboard}
                   usersPokemon={usersPokemonCollection}
                   pokemonArray={pokemonArray}
                 />
               )}
-            {Object.values(usersPokemonCollection).length === 1 && (
-              <PokemonDashboard
-                usersPokemon={usersPokemonCollection}
-                selectPokemon={props.selectPokemon}
-                setTimeForBattle={setTimeForBattle}
-                pokemonArray={pokemonArray}
-                user={props.user}
-                users={users}
-              />
-            )}
+            {Object.values(usersPokemonCollection).length === 1 &&
+              avatarSettings && (
+                <PokemonDashboard
+                  usersPokemon={usersPokemonCollection}
+                  selectPokemon={props.selectPokemon}
+                  setTimeForBattle={setTimeForBattle}
+                  pokemonArray={pokemonArray}
+                  user={props.user}
+                  users={users}
+                />
+              )}
           </Box>
         </>
       )}
@@ -235,28 +263,3 @@ export default function Home(props) {
     </Container>
   );
 }
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-    textAlign: "center",
-  },
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-  medium: {
-    width: theme.spacing(5),
-    height: theme.spacing(5),
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-  },
-  large: {
-    width: theme.spacing(7),
-    height: theme.spacing(7),
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
-  },
-}));

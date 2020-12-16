@@ -1,14 +1,9 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Avatar,
-  Button,
-  LinearProgress,
-} from "@material-ui/core";
+import { AppBar, Toolbar, Typography, Avatar, Button } from "@material-ui/core";
 import firebase from "../firebaseConfig";
+
+import { renderUserAvatar } from "../common/userFunctions";
 
 export default function AppTopNav(props) {
   const { large, medium, title } = useStyles();
@@ -20,12 +15,15 @@ export default function AppTopNav(props) {
     database.remove();
   };
 
+  console.log("props.user", props.user);
+
   return (
     <AppBar style={{ background: "white", color: "black" }} position="fixed">
       <Toolbar>
-        <Avatar className={medium} src={props.user && props.user.photoURL} />
+        {/*<Avatar className={medium} src={props.user && props.userPhoto} />*/}
+        <Avatar className={medium} src={renderUserAvatar(props.user)} />
         <Typography variant="h6" className={title}>
-          {props.user && props.user.displayName}
+          {props.user && props.user.userData.name}
         </Typography>
         {/*<div className={title}>*/}
         {/*  <LinearProgress className={title} variant="determinate" value={50} />*/}
