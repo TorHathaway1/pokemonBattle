@@ -11,10 +11,6 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "center",
     color: theme.palette.text.secondary,
   },
-  container: {
-    // backgroundImage: `url(${bg})`,
-    // backgroundSize: "cover",
-  },
   bgImage: {
     background: `url(${bg})`,
     backgroundSize: "cover",
@@ -35,7 +31,7 @@ export default function Login() {
       .auth()
       .signInWithPopup(provider)
       .then(function (result) {
-        console.log(result);
+        // console.log(result);
       })
       .catch(function (error) {
         console.log("ERR", error);

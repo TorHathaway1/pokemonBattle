@@ -12,7 +12,11 @@ export default function CardGrid(props) {
         {props.pokemonArray.map((p, i) => {
           return (
             <Grid item key={i} xs={3}>
-              <PokemonCard selectPokemon={props.selectPokemon} pokemon={p} />
+              <PokemonCard
+                selectPokemon={props.selectPokemon}
+                userIsSelectingPokemon
+                pokemon={p}
+              />
             </Grid>
           );
         })}

@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import firebase from "../firebaseConfig";
-import { makeStyles } from "@material-ui/core/styles";
 import { Container, Box } from "@material-ui/core";
+
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  colors,
+  animals,
+} from "unique-names-generator";
 
 import CardGrid from "../components/CardGrid";
 import AppTopNav from "../components/AppTopNav";
@@ -16,7 +22,8 @@ import {
   sizeOfPokemonGroupFetched,
   totalNumberOfPokemonTypes,
 } from "../constants/vars";
-import UserProfileCard from "../components/UserProfileCard";
+
+import UserProfileDialog from "../components/UserProfileDialog";
 
 const db = firebase.database();
 
@@ -27,6 +34,7 @@ export default function Home(props) {
   const [timeForBattle, setTimeForBattle] = useState(false);
   const [users, setUsers] = useState({});
   const [avatarSettings, setAvatarSettings] = useState(null);
+  const [editAvatar, setEditAvatar] = useState(false);
 
   const randomPokemonIDToStartGroupFrom = Math.ceil(
     Math.random() * maximumNumberOfPokemon
@@ -74,14 +82,28 @@ export default function Home(props) {
   };
 
   useEffect(() => {
-    if (users.length > 0) {
+    if (
+      Object.keys(users).length > 0 &&
+      users[props.user.uid].userData &&
+      users[props.user.uid].userData.avatarSettings === undefined
+    ) {
+      console.log("undefined stuff");
       setUserInformation();
     }
-  }, [users.length > 0]);
+  }, [Object.keys(users).length > 0 && users[props.user.uid]]);
 
   const setUserInformation = () => {
+    setEditAvatar(true);
+    const capitalizedRandomName = uniqueNamesGenerator({
+      dictionaries: [colors, adjectives, animals],
+      style: "capital",
+      separator: " ",
+    });
     let userData = {
-      name: firebase.auth().currentUser.displayName,
+      name:
+        firebase.auth().currentUser.displayName !== ""
+          ? firebase.auth().currentUser.displayName
+          : capitalizedRandomName,
       hp: 100,
       experience: 0,
       uid: firebase.auth().currentUser.uid,
@@ -89,6 +111,16 @@ export default function Home(props) {
       opponent: "",
       battleUID: "",
       photoURL: firebase.auth().currentUser.photoURL,
+      avatarSettings: {
+        gender: "male",
+        hatColor1: "",
+        hatColor2: "",
+        skinColor1: "",
+        skinColor2: "",
+        shirtColor1: "",
+        shirtColor2: "",
+        underShirtColor: "",
+      },
     };
     return firebase
       .database()
@@ -101,6 +133,7 @@ export default function Home(props) {
       avatarSettings: avatarSettings,
     };
     setAvatarSettings(avatarSettings);
+    setEditAvatar(false);
     return firebase
       .database()
       .ref("users/" + props.user.uid + "/userData")
@@ -218,33 +251,38 @@ export default function Home(props) {
             userPhoto={props.user.photoURL ? props.user.photoURL : null}
             usersPokemon={usersPokemonCollection}
             setTimeForBattle={setTimeForBattle}
+            setEditAvatar={setEditAvatar}
             logout={props.logout}
           />
           <Box mt={8} p={3}>
             {!avatarSettings && !users[props.user.uid] && "loading"}
-            {!avatarSettings && users[props.user.uid] && (
-              <UserProfileCard setUserProfile={setUserProfile} />
+            {((!avatarSettings && users[props.user.uid]) || editAvatar) && (
+              <UserProfileDialog
+                open={editAvatar}
+                user={users[props.user.uid]}
+                setEditAvatar={setEditAvatar}
+                setUserProfile={setUserProfile}
+              />
             )}
             {!timeForBattle &&
-              Object.values(usersPokemonCollection).length < 1 &&
-              avatarSettings && (
+              Object.values(usersPokemonCollection).length < 8 && (
                 <CardGrid
                   selectPokemon={selectPokemonInDashboard}
                   usersPokemon={usersPokemonCollection}
                   pokemonArray={pokemonArray}
                 />
               )}
-            {Object.values(usersPokemonCollection).length === 1 &&
-              avatarSettings && (
-                <PokemonDashboard
-                  usersPokemon={usersPokemonCollection}
-                  selectPokemon={props.selectPokemon}
-                  setTimeForBattle={setTimeForBattle}
-                  pokemonArray={pokemonArray}
-                  user={props.user}
-                  users={users}
-                />
-              )}
+            {Object.values(usersPokemonCollection).length > 7 && (
+              <PokemonDashboard
+                usersPokemon={usersPokemonCollection}
+                selectPokemon={props.selectPokemon}
+                setTimeForBattle={setTimeForBattle}
+                setEditAvatar={setEditAvatar}
+                pokemonArray={pokemonArray}
+                user={props.user}
+                users={users}
+              />
+            )}
           </Box>
         </>
       )}

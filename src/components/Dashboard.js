@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import { Typography, LinearProgress } from "@material-ui/core";
 
 import Grid from "@material-ui/core/Grid";
-import PokemonCard from "../components/PokemonCard";
-import Stats from "./Stats";
 import UserList from "../components/UserList";
 import PreBattleDialog from "../components/PreBattleDialogue";
 import firebase from "../firebaseConfig";
 
 import { initializePokemonForBattle } from "../common/pokemonFunctions";
+import TrainerCard from "./TrainerCard";
+import PokemonDialog from "./PokemonDialog";
+import bg from "../images/pokemon_map_bg.png";
 
 const db = firebase.database();
 
@@ -17,6 +17,8 @@ export default function Dashboard(props) {
   const classes = useStyles();
   const [statusOfUsers, setStatusOfUsers] = useState({});
   const [challenger, setChallenger] = useState(false);
+  const [showPokemon, setShowPokemon] = useState(null);
+  const [showTrainer, setShowTrainer] = useState(null);
 
   useEffect(() => {
     db.ref("status").on("value", (x) => {
@@ -119,19 +121,16 @@ export default function Dashboard(props) {
 
   return (
     <div className={classes.root}>
+      <div className={classes.bgImage} />
       <Grid item={true} container xs={12}>
         <Grid item container xs={6}>
-          {Object.values(props.usersPokemon).map((p, i) => {
-            return (
-              <Grid
-                item={true}
-                key={p.name}
-                xs={Object.keys(props.usersPokemon).length === 2 ? 6 : 12}
-              >
-                <PokemonCardData pokemon={p} key={p.name} />
-              </Grid>
-            );
-          })}
+          {props.users && props.users[props.user.uid] && (
+            <TrainerCard
+              user={props.users[props.user.uid]}
+              setEditAvatar={props.setEditAvatar}
+              setShowPokemon={setShowPokemon}
+            />
+          )}
         </Grid>
         <Grid item xs={6}>
           <UserList
@@ -141,8 +140,17 @@ export default function Dashboard(props) {
             challengeUser={challengeUser}
             challengeBot={challengeBot}
             setTimeForBattle={props.setTimeForBattle}
+            setShowTrainer={setShowTrainer}
           />
         </Grid>
+        {showPokemon && props.users[props.user.uid] && (
+          <PokemonDialog
+            open={showPokemon}
+            pokemon={showPokemon}
+            setShowPokemon={setShowPokemon}
+            user={props.users[props.user.uid]}
+          />
+        )}
       </Grid>
       <PreBattleDialog
         challenger={challenger}
@@ -150,8 +158,6 @@ export default function Dashboard(props) {
           props.users[props.user.uid] &&
           props.users[props.user.uid].userData &&
           props.users[props.user.uid].userData.status === "pending"
-            ? true
-            : false
         }
         user={props.users[props.user.uid]}
         users={props.users}
@@ -159,42 +165,6 @@ export default function Dashboard(props) {
         denyChallenge={denyChallenge}
       />
     </div>
-  );
-}
-
-function PokemonCardData(props) {
-  const classes = useStyles();
-  const pokemonGrowthRateLevels = props.pokemon.species.growth_rate.levels;
-  const pokemonLevel = props.pokemon.level;
-  let expNeededForCurrLevel =
-    pokemonGrowthRateLevels[pokemonLevel - 1].experience;
-  let expNeededForNextLevel = pokemonGrowthRateLevels[pokemonLevel].experience;
-  let totalExpForPokemon =
-    props.pokemon.experience + props.pokemon.base_experience;
-
-  let totalEXPNeededToLevelUp = expNeededForNextLevel - expNeededForCurrLevel;
-  let totalEXPGainedSinceLastLevelUp =
-    totalExpForPokemon - expNeededForCurrLevel;
-
-  return (
-    <Grid item xs={12} className={classes.root}>
-      <PokemonCard selectPokemon={props.selectPokemon} pokemon={props.pokemon}>
-        <Typography variant="h5">lvl {props.pokemon.level}</Typography>
-        <LinearProgress
-          style={{ width: "40%", margin: "auto" }}
-          variant="determinate"
-          value={
-            (totalEXPGainedSinceLastLevelUp / totalEXPNeededToLevelUp) * 100
-          }
-        />
-        <Typography variant="subtitle1" className={classes.title}>
-          {totalExpForPokemon} exp
-        </Typography>
-        <Grid container>
-          <Stats stats={props.pokemon.stats} />
-        </Grid>
-      </PokemonCard>
-    </Grid>
   );
 }
 
@@ -221,5 +191,8 @@ const useStyles = makeStyles((theme) => ({
     height: theme.spacing(7),
     marginLeft: theme.spacing(2),
     marginRight: theme.spacing(2),
+  },
+  bgImage: {
+    // background: "lightgray",
   },
 }));

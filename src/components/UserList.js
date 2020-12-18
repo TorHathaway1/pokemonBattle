@@ -11,10 +11,11 @@ import {
   Grid,
   Button,
   Divider,
+  SvgIcon,
 } from "@material-ui/core";
 import AdbIcon from "@material-ui/icons/Adb";
 import { green, grey } from "@material-ui/core/colors";
-import { renderUserAvatar } from "../common/userFunctions";
+import { renderUserAvatarIcon } from "../common/userFunctions";
 
 export default function UserList(props) {
   const classes = useStyles();
@@ -39,23 +40,30 @@ export default function UserList(props) {
               challengeBot={props.challengeBot}
             />
             <Divider />
-            {Object.keys(props.statusOfUsers).map((user, i) => {
-              let userOnline = props.statusOfUsers[user].state === "online";
-              if (user !== props.user.uid) {
-                return (
-                  <UserListItem
-                    key={user}
-                    setTimeForBattle={props.setTimeForBattle}
-                    userOnline={userOnline}
-                    user={props.users[user]}
-                    state={props.statusOfUsers[user].state}
-                    challengeUser={props.challengeUser}
-                  />
-                );
-              } else {
-                return null;
-              }
-            })}
+            {Object.keys(props.statusOfUsers)
+              .sort((a, b) =>
+                props.statusOfUsers[a].state < props.statusOfUsers[b].state
+                  ? 1
+                  : -1
+              )
+              .map((user, i) => {
+                let userOnline = props.statusOfUsers[user].state === "online";
+                if (user !== props.user.uid && props.users[user]) {
+                  return (
+                    <UserListItem
+                      key={user}
+                      setTimeForBattle={props.setTimeForBattle}
+                      userOnline={userOnline}
+                      user={props.users[user]}
+                      state={props.statusOfUsers[user].state}
+                      challengeUser={props.challengeUser}
+                      setShowTrainer={props.setShowTrainer}
+                    />
+                  );
+                } else {
+                  return null;
+                }
+              })}
           </List>
         </div>
       </Grid>
@@ -64,6 +72,7 @@ export default function UserList(props) {
 }
 
 const UserListItem = (props) => {
+  const classes = useStyles();
   let bot = props.user.userData.name === "Bot";
   let currentlyFighting = !bot && props.user.userData.status !== "";
   return (
@@ -71,11 +80,23 @@ const UserListItem = (props) => {
       <ListItemAvatar>
         <Avatar
           style={{
-            background: props.userOnline && !bot ? green[300] : grey[350],
+            background:
+              props.userOnline && !bot
+                ? green[100]
+                : bot
+                ? grey[300]
+                : grey[350],
           }}
-          src={!bot ? renderUserAvatar(props.user) : null}
+          className={classes.large}
+          onClick={!bot ? () => props.setShowTrainer(props.user) : null}
         >
-          {bot ? <AdbIcon /> : null}
+          {bot ? (
+            <AdbIcon />
+          ) : (
+            <SvgIcon style={{ fontSize: "4rem" }}>
+              {renderUserAvatarIcon(props.user, "large")}
+            </SvgIcon>
+          )}
         </Avatar>
       </ListItemAvatar>
       <ListItemText
@@ -124,5 +145,17 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     margin: theme.spacing(4, 0, 2),
+  },
+  medium: {
+    width: theme.spacing(5),
+    height: theme.spacing(5),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
+  },
+  large: {
+    width: theme.spacing(7),
+    height: theme.spacing(7),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
   },
 }));

@@ -15,6 +15,7 @@ const useStyles = makeStyles((theme) => ({
   media: {
     height: 500,
     width: "100%",
+    minWidth: 500,
   },
 }));
 
@@ -29,7 +30,11 @@ export default function PokemonCard(props) {
       style={{
         background: props.pokemon.selected !== true ? "inherit" : "red",
       }}
-      onClick={() => props.selectPokemon(props.pokemon)}
+      onClick={
+        props.userIsSelectingPokemon
+          ? () => props.selectPokemon(props.pokemon)
+          : null
+      }
     >
       <CardActionArea>
         <CardMedia

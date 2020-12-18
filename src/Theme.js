@@ -10,6 +10,9 @@ import {
   blueGrey,
   yellow,
   grey,
+  lightBlue,
+  deepPurple,
+  lime,
 } from "@material-ui/core/colors";
 
 const theme = createMuiTheme({
@@ -27,27 +30,31 @@ const theme = createMuiTheme({
       contrastText: "#000",
     },
     ground: brown[200],
-    water: blue[200],
+    water: lightBlue[200],
     dragon: red[200],
     fairy: pink[200],
-    fighting: orange[500],
+    fighting: orange[300],
     electric: yellow[300],
-    fire: red[400],
+    fire: red[200],
     rock: grey[400],
-    ice: blue[100],
-    dark: grey[600],
-    psychic: purple[200],
-    flying: blue[500],
-    grass: green[300],
-    bug: yellow[200],
-    ghost: blueGrey[300],
+    ice: blue[200],
+    dark: grey[300],
+    psychic: deepPurple[200],
+    flying: lightBlue[500],
+    grass: green[200],
+    bug: lime[200],
+    ghost: blueGrey[200],
     poison: purple[300],
+    normal: blueGrey[300],
   },
   overrides: {
-    // Style sheet name ⚛️
     MuiCard: {
-      // Name of the rule
       disableRipple: true,
+    },
+    MuiAvatar: {
+      rounded: {
+        borderRadius: "20px",
+      },
     },
   },
 });

@@ -1,50 +1,35 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import { AppBar, Toolbar, Typography, Avatar, Button } from "@material-ui/core";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Avatar,
+  Button,
+  SvgIcon,
+} from "@material-ui/core";
 import firebase from "../firebaseConfig";
 
-import { renderUserAvatar } from "../common/userFunctions";
+import pokeBall from "../images/pokeball.png";
 
 export default function AppTopNav(props) {
   const { large, medium, title } = useStyles();
 
   const deletePokemonFromUsersCollection = (pokemon) => {
+    console.log("deleting", pokemon);
     var database = firebase
       .database()
       .ref("users/" + props.user.uid + "/pokemon/" + pokemon.name);
     database.remove();
   };
 
-  console.log("props.user", props.user);
-
   return (
     <AppBar style={{ background: "white", color: "black" }} position="fixed">
       <Toolbar>
-        {/*<Avatar className={medium} src={props.user && props.userPhoto} />*/}
-        <Avatar className={medium} src={renderUserAvatar(props.user)} />
-        <Typography variant="h6" className={title}>
-          {props.user && props.user.userData.name}
+        <Avatar className={medium} src={pokeBall} />
+        <Typography variant="h4" className={title}>
+          PokeBattle
         </Typography>
-        {/*<div className={title}>*/}
-        {/*  <LinearProgress className={title} variant="determinate" value={50} />*/}
-        {/*</div>*/}
-        {Object.values(props.usersPokemon)
-          .splice(0, 3)
-          .map((p, i) => {
-            return (
-              <Avatar
-                onClick={() => deletePokemonFromUsersCollection(p)}
-                key={p.name}
-                alt={p.name}
-                className={large}
-                src={
-                  Object.values(props.usersPokemon)[i].sprites.other[
-                    "official-artwork"
-                  ].front_default
-                }
-              />
-            );
-          })}
         <Button
           variant={"outlined"}
           color={"secondary"}
