@@ -9,26 +9,44 @@ import {
   DialogTitle,
   DialogContentText,
   DialogContent,
+  Avatar,
+  SvgIcon,
+  CardHeader,
+  Grid,
 } from "@material-ui/core";
 
 import Pokemon from "../components/Pokemon";
+import PokemonAvatar from "./PokemonAvatar";
 
 import { MOVE_COUNT } from "../constants/vars";
+import { renderUserAvatarIcon } from "../common/userFunctions";
+import { makeStyles } from "@material-ui/core/styles";
+import AdbIcon from "@material-ui/icons/Adb";
+
+const useStyles = makeStyles((theme) => ({
+  card: {
+    width: "100%",
+  },
+  largeAvatar: {
+    width: theme.spacing(6),
+    height: theme.spacing(6),
+  },
+  pokemonAvatar: {
+    margin: theme.spacing(1),
+    width: theme.spacing(16),
+    height: theme.spacing(16),
+  },
+}));
 
 function PokemonContainer(props) {
+  const classes = useStyles();
   const [opponent, setOpponent] = useState(props.opponent);
   const [attacking, setAttacking] = useState(false);
   const [open, setOpen] = React.useState(false);
 
-  const handleClose = (value) => {
+  const handleClose = () => {
     setOpen(false);
   };
-
-  useEffect(() => {
-    if (props.battle.moves) {
-      console.log("moves!", props.battle.moves);
-    }
-  }, [props.battle.moves]);
 
   useEffect(() => {
     setOpponent(props.opponent);
@@ -47,8 +65,6 @@ function PokemonContainer(props) {
 
   const statsContainer = {
     position: "absolute",
-    // border: "solid 2px black",
-    // margin: 60,
     padding: 20,
     fontSize: "24px",
     minWidth: "600px",
@@ -56,7 +72,6 @@ function PokemonContainer(props) {
     fontWeight: 700,
     background: "white",
     borderRadius: "0px 0px  5px",
-    // boxShadow: "20px 20px 20px #686868, -20px -20px 20px #8c8c8c",
     zIndex: 1000,
   };
 
@@ -89,43 +104,65 @@ function PokemonContainer(props) {
     return () => clearTimeout(timer);
   }, [attacking]);
 
+  if (props.user) {
+    console.log("props.user", props.user.pokemon);
+  }
+
   return (
     <div>
-      <div
-        style={{
-          ...statsContainer,
-        }}
-      >
-        <ButtonGroup
-          color="primary"
-          size="small"
-          aria-label="outlined primary button group"
-        >
-          {props.pokemon &&
-            props.pokemon.moves &&
-            props.pokemon.moves.slice(0, MOVE_COUNT).map((mv, i) => {
-              return (
-                <Button
-                  key={props.pokemon.name + i}
-                  size="small"
-                  onClick={() => attack(mv, props.pokemon, opponent, props.me)}
-                  disabled={
-                    props.fainted ||
-                    (props.battle.moves &&
-                      props.battle.moves[props.battle.moves.length - 1])
-                      ? props.battle.moves[props.battle.moves.length - 1]
-                          .attacker === props.pokemon.name
-                      : false
-                  }
-                >
-                  {mv.move.name} - {mv.accuracy}
-                </Button>
-              );
-            })}
-        </ButtonGroup>
-        <Button size="small">{props.pokemon.name}</Button>
-        <div style={{ position: "absolute", width: "90%", bottom: 0 }}>
-          <LinearProgressWithLabel value={props.pokemon.health} />
+      <div style={statsContainer}>
+        <div style={{ padding: 10, display: "inlineBlock" }}>
+          <Avatar
+            className={classes.largeAvatar}
+            onClick={() => null}
+            variant={"square"}
+            style={{ display: "inline-block" }}
+          >
+            {props.user === undefined ? (
+              <AdbIcon style={{ fontSize: "2.25rem" }} />
+            ) : (
+              <SvgIcon style={{ fontSize: "3rem" }}>
+                {renderUserAvatarIcon(props.user, "large")}
+              </SvgIcon>
+            )}
+          </Avatar>
+          {props.user ? props.user.userData.name : "Bot"}
+          <div
+            style={{
+              padding: 10,
+              display: "inline-block",
+              background: "lightBlue",
+              borderRadius: "5px",
+              marginLeft: 10,
+            }}
+          >
+            {props.user &&
+              Object.values(props.user.pokemon).map((p, i) => {
+                return (
+                  <PokemonAvatar
+                    small
+                    displayInline
+                    pokemon={p}
+                    setShowPokemon={(p) => console.log(p)}
+                  />
+                );
+              })}
+          </div>
+        </div>
+        <div style={{ padding: 20 }}>
+          <Typography variant={"h6"}>{props.pokemon.name}</Typography>
+          <Typography variant={"subtitle1"}>{props.pokemon.level}</Typography>
+          <MoveButtons
+            attack={attack}
+            fainted={props.fainted}
+            battle={props.battle}
+            pokemon={props.pokemon}
+            opponent={props.opponent}
+            me={props.me}
+          />
+          <div style={{ position: "absolute", width: "90%", bottom: 0 }}>
+            <LinearProgressWithLabel value={props.pokemon.health} />
+          </div>
         </div>
       </div>
       <Pokemon
@@ -149,6 +186,39 @@ function PokemonContainer(props) {
     </div>
   );
 }
+
+const MoveButtons = (props) => {
+  return (
+    <ButtonGroup
+      variant="contained"
+      color="primary"
+      size="small"
+      aria-label="outlined primary button group"
+    >
+      {props.pokemon &&
+        props.pokemon.moves.slice(0, MOVE_COUNT).map((mv, i) => {
+          return (
+            <Button
+              key={mv.name + i}
+              onClick={() =>
+                props.attack(mv, props.pokemon, props.opponent, props.me)
+              }
+              disabled={
+                props.fainted ||
+                (props.battle.moves &&
+                  props.battle.moves[props.battle.moves.length - 1])
+                  ? props.battle.moves[props.battle.moves.length - 1]
+                      .attacker === props.pokemon.name
+                  : false
+              }
+            >
+              {mv.move.name}
+            </Button>
+          );
+        })}
+    </ButtonGroup>
+  );
+};
 
 function LinearProgressWithLabel(props) {
   return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles, withStyles } from "@material-ui/core/styles";
 import {
   List,
   ListItem,
@@ -12,6 +12,7 @@ import {
   Button,
   Divider,
   SvgIcon,
+  Badge,
 } from "@material-ui/core";
 import AdbIcon from "@material-ui/icons/Adb";
 import { green, grey } from "@material-ui/core/colors";
@@ -72,36 +73,21 @@ export default function UserList(props) {
 }
 
 const UserListItem = (props) => {
-  const classes = useStyles();
   let bot = props.user.userData.name === "Bot";
   let currentlyFighting = !bot && props.user.userData.status !== "";
   return (
     <ListItem>
       <ListItemAvatar>
-        <Avatar
-          style={{
-            background:
-              props.userOnline && !bot
-                ? green[100]
-                : bot
-                ? grey[300]
-                : grey[350],
-          }}
-          className={classes.large}
-          onClick={!bot ? () => props.setShowTrainer(props.user) : null}
-        >
-          {bot ? (
-            <AdbIcon />
-          ) : (
-            <SvgIcon style={{ fontSize: "4rem" }}>
-              {renderUserAvatarIcon(props.user, "large")}
-            </SvgIcon>
-          )}
-        </Avatar>
+        <UserListItemAvatar
+          userOnline={props.userOnline}
+          bot={bot}
+          setShowTrainer={props.setShowTrainer}
+          user={props.user}
+        />
       </ListItemAvatar>
       <ListItemText
         primary={props.user.userData.name}
-        secondary={props.state ? props.state : null}
+        // secondary={props.state ? props.state : null}
       />
       <ListItemSecondaryAction>
         <ButtonGroup
@@ -124,6 +110,76 @@ const UserListItem = (props) => {
         </ButtonGroup>
       </ListItemSecondaryAction>
     </ListItem>
+  );
+};
+
+const StyledBadge = withStyles((theme) => ({
+  badge: {
+    backgroundColor: (props) =>
+      props.userOnline ? "#44b700" : theme.palette.background.paper,
+    color: (props) => (props.userOnline ? "#44b700" : "grey"),
+    boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+    marginRight: 10,
+    border: (props) => `1px solid ${props.userOnline ? " #44b700" : "grey"}`,
+    "&::after": (props) => ({
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      borderRadius: "50%",
+      animation: "$ripple 1.2s infinite ease-in-out",
+      border: "1px solid currentColor",
+      content: '""',
+    }),
+  },
+  "@keyframes ripple": {
+    "0%": {
+      transform: "scale(.8)",
+      opacity: 1,
+    },
+    "100%": {
+      transform: "scale(2.4)",
+      opacity: 0,
+    },
+  },
+}))(Badge);
+
+const UserListItemAvatar = (props) => {
+  const classes = useStyles();
+  return (
+    <StyledBadge
+      overlap="circle"
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "right",
+      }}
+      variant="standard"
+      userOnline={props.userOnline}
+      badgeContent=""
+    >
+      <Avatar
+        style={{
+          background:
+            props.userOnline || props.bot
+              ? props.bot
+                ? green[200]
+                : green[100]
+              : grey[350],
+        }}
+        variant={props.bot ? "rounded" : "circular"}
+        className={classes.large}
+        onClick={!props.bot ? () => props.setShowTrainer(props.user) : null}
+      >
+        {props.bot ? (
+          <AdbIcon style={{ fontSize: "2.25rem" }} />
+        ) : (
+          <SvgIcon style={{ fontSize: "4rem" }}>
+            {renderUserAvatarIcon(props.user, "large")}
+          </SvgIcon>
+        )}
+      </Avatar>
+    </StyledBadge>
   );
 };
 

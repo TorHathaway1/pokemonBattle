@@ -12,6 +12,7 @@ import PokemonDialog from "./PokemonDialog";
 import bg from "../images/pokemon_map_bg.png";
 
 const db = firebase.database();
+const ACCEPTED = "accepted";
 
 export default function Dashboard(props) {
   const classes = useStyles();
@@ -31,7 +32,6 @@ export default function Dashboard(props) {
 
   useEffect(() => {
     let currentUser = props.users[props.user.uid];
-    const ACCEPTED = "accepted";
     if (
       currentUser &&
       currentUser.userData.opponent !== "" &&
@@ -104,9 +104,8 @@ export default function Dashboard(props) {
   };
 
   const challengeBot = async () => {
-    let initializedPokemon = await initializePokemonForBattle(
-      props.pokemonArray[Math.ceil(Math.random() * 20)]
-    );
+    let randomPokemon = props.pokemonArray[Math.ceil(Math.random() * 20)];
+    let initializedPokemon = await initializePokemonForBattle(randomPokemon);
     const botBattleUID = createAndInsertP2PBattleIntoDB({
       pokemon: {
         [initializedPokemon.name]: { ...initializedPokemon, trainerUID: "bot" },

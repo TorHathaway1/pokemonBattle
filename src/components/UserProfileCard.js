@@ -57,7 +57,7 @@ const shirtPalette = {
 
 const useStyles = makeStyles({
   root: {
-    width: 500,
+    maxWidth: 500,
     margin: "auto",
     textAlign: "center",
   },

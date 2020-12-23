@@ -6,16 +6,10 @@ import GameOverDialog from "../components/GameOverDialog";
 import {
   calculatePokemonLevel,
   calculateExperience,
-  initializePokemonForBattle,
   calculateDamage,
 } from "../common/pokemonFunctions";
-import { backgroundImgArray } from "../constants/vars";
+import { randomBackground } from "../common/gameFunctions";
 import firebase from "../firebaseConfig";
-
-const randomNumberForBackgroundImgSelection = Math.ceil(
-  Math.random() * backgroundImgArray.length - 1
-);
-
 const db = firebase.database();
 
 function BattleGround(props) {
@@ -32,20 +26,8 @@ function BattleGround(props) {
   }, [usersPokemonCollection && props.timeForBattle]);
 
   useEffect(() => {
-    gameOver();
+    isGameOver();
   }, [battle]);
-
-  useEffect(() => {
-    if (battle.moves) {
-      console.log("attacker", battle.moves[battle.moves.length - 1].attacker);
-    }
-  }, [battle.moves]);
-
-  const insertBattleIntoDb = async (battle) => {
-    return db
-      .ref("battles/" + props.users[props.user.uid].userData.battleUID)
-      .set(battle);
-  };
 
   const initializeFirebaseBattleListener = () => {
     let battleRef = firebase
@@ -59,7 +41,52 @@ function BattleGround(props) {
     });
   };
 
-  const attack = (move, pokemon, opponent, isSuccessful, isMe) => {
+  const isGameOver = () => {
+    let pokemonInBattle = Object.values(battle);
+
+    let currentPokemon = pokemonInBattle.map((x) =>
+      !Array.isArray(x) ? x.pokemon : null
+    );
+    let loserIndex = currentPokemon.findIndex((x) => x && x.health === 0);
+    let winnerIndex = currentPokemon.findIndex((x) => x && x.health !== 0);
+
+    currentPokemon.map(async (p, i) => {
+      if (p && Object.values(p)[0].health === 0) {
+        let loser = Object.values(p)[0];
+        resetEachUserFightingStatus();
+        let expGained = calculateExperience(currentPokemon[winnerIndex], loser);
+        setExpGainForWinner(expGained);
+        setWinner(props.selectedPokemon[winnerIndex]);
+        props.selectedPokemon[winnerIndex].experience =
+          props.selectedPokemon[winnerIndex].experience + expGained;
+
+        props.selectedPokemon[winnerIndex].level = await calculatePokemonLevel(
+          props.selectedPokemon[winnerIndex]
+        );
+        props.setPokemonForUser(props.selectedPokemon[winnerIndex]);
+        setExpForUser(props.selectedPokemon[winnerIndex].trainerUID, expGained);
+        setTimeout(() => {
+          setShowGameOverDialog(true);
+        }, 2000);
+      }
+    });
+  };
+
+  const resetEachUserFightingStatus = () => {
+    let statusState = { opponent: "", status: "", battleUID: "" };
+    db.ref("users/" + props.user.uid + "/userData").update(statusState);
+  };
+
+  const setExpForUser = async (userUID, exp) => {
+    let updatedUserExperience = props.users[userUID].userData.experience + exp;
+    let userData = { experience: updatedUserExperience };
+    return firebase
+      .database()
+      .ref("users/" + userUID + "/userData")
+      .update(userData);
+  };
+
+  const attack = (move, pokemon, opponent, isSuccessful) => {
     let currentBattle = battle;
     let moveDamage = calculateDamage(move, pokemon, opponent);
     let opponentNewHealth =
@@ -81,57 +108,13 @@ function BattleGround(props) {
       success: isSuccessful,
     });
 
-    insertBattleIntoDb(currentBattle);
+    updateBattleInDb(currentBattle);
   };
 
-  const gameOver = () => {
-    let pokemonInBattle = Object.values(battle);
-
-    let currentPokemon = pokemonInBattle.map((x) =>
-      !Array.isArray(x) ? x.pokemon : null
-    );
-    let loserIndex = currentPokemon.findIndex((x) => x && x.health === 0);
-    let winnerIndex = currentPokemon.findIndex((x) => x && x.health !== 0);
-
-    currentPokemon.map(async (p, i) => {
-      if (p && Object.values(p)[0].health === 0) {
-        let loser = Object.values(p)[0];
-        resetEachUsersFightingStatus();
-        let expGained = calculateExperience(currentPokemon[winnerIndex], loser);
-        setExpGainForWinner(expGained);
-        setWinner(props.selectedPokemon[winnerIndex]);
-        props.selectedPokemon[winnerIndex].experience =
-          props.selectedPokemon[winnerIndex].experience + expGained;
-
-        props.selectedPokemon[winnerIndex].level = await calculatePokemonLevel(
-          props.selectedPokemon[winnerIndex]
-        );
-        props.setPokemonForUser(props.selectedPokemon[winnerIndex]);
-        setExpForUser(props.selectedPokemon[winnerIndex].trainerUID, expGained);
-        setTimeout(() => {
-          setShowGameOverDialog(true);
-        }, 2000);
-      }
-    });
-  };
-
-  const setExpForUser = async (userUID, exp) => {
-    let updatedUserExperience = props.users[userUID].userData.experience + exp;
-    let userData = { experience: updatedUserExperience };
-    return firebase
-      .database()
-      .ref("users/" + userUID + "/userData")
-      .update(userData);
-  };
-
-  const resetEachUsersFightingStatus = () => {
-    let updateBoth = { opponent: "", status: "", battleUID: "" };
-    db.ref(
-      "users/" + props.users[props.user.uid].userData.uid + "/userData"
-    ).update(updateBoth);
-    // db.ref(
-    //   "users/" + props.users[props.user.uid].userData.fighting + "/userData"
-    // ).update(updateBoth);
+  const updateBattleInDb = async (battle) => {
+    return db
+      .ref("battles/" + props.users[props.user.uid].userData.battleUID)
+      .set(battle);
   };
 
   return (
@@ -141,10 +124,7 @@ function BattleGround(props) {
         height: "100vh",
         width: "100vw",
         maxWidth: "100vw",
-        backgroundImage:
-          "url('" +
-          backgroundImgArray[randomNumberForBackgroundImgSelection] +
-          "')",
+        backgroundImage: "url('" + randomBackground() + "')",
         backgroundPosition: 0,
         backgroundSize: "cover",
         padding: 0,
@@ -175,6 +155,7 @@ function BattleGround(props) {
                   pokemon.name
                 : false
             }
+            user={props.users[Object.keys(battle)[i]]}
             battle={battle}
             pokemon={pokemon}
             opponent={opponent}

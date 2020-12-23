@@ -40,7 +40,7 @@ const theme = createMuiTheme({
     ice: blue[200],
     dark: grey[300],
     psychic: deepPurple[200],
-    flying: lightBlue[500],
+    flying: lightBlue[300],
     grass: green[200],
     bug: lime[200],
     ghost: blueGrey[200],

@@ -14,9 +14,6 @@ export default function UserProfileDialog(props) {
       aria-labelledby="simple-dialog-title"
       open={props.open}
     >
-      <DialogTitle style={{ textAlign: "center" }} id="simple-dialog-title">
-        Customize Trainer Avatar
-      </DialogTitle>
       <UserProfileCard
         setUserProfile={props.setUserProfile}
         user={props.user}

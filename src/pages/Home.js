@@ -49,7 +49,6 @@ export default function Home(props) {
     }
   }, [users[props.user.uid]]);
 
-  // fires once
   useEffect(() => {
     resetUsersBattleStatuses();
     setupPokemonUsersListener();
@@ -61,6 +60,16 @@ export default function Home(props) {
     );
     setupPokemonFirebaseListener();
   }, []);
+
+  useEffect(() => {
+    if (
+      Object.keys(users).length > 0 &&
+      users[props.user.uid].userData &&
+      users[props.user.uid].userData.avatarSettings === undefined
+    ) {
+      setUserInformation();
+    }
+  }, [Object.keys(users).length > 0 && users[props.user.uid]]);
 
   const resetUsersBattleStatuses = () => {
     let updateUser = { status: "", opponent: "", battleUID: "" };
@@ -81,17 +90,6 @@ export default function Home(props) {
     });
   };
 
-  useEffect(() => {
-    if (
-      Object.keys(users).length > 0 &&
-      users[props.user.uid].userData &&
-      users[props.user.uid].userData.avatarSettings === undefined
-    ) {
-      console.log("undefined stuff");
-      setUserInformation();
-    }
-  }, [Object.keys(users).length > 0 && users[props.user.uid]]);
-
   const setUserInformation = () => {
     setEditAvatar(true);
     const capitalizedRandomName = uniqueNamesGenerator({
@@ -106,6 +104,7 @@ export default function Home(props) {
           : capitalizedRandomName,
       hp: 100,
       experience: 0,
+      money: 0,
       uid: firebase.auth().currentUser.uid,
       status: "",
       opponent: "",
@@ -286,7 +285,7 @@ export default function Home(props) {
           </Box>
         </>
       )}
-      {timeForBattle && Object.values(usersPokemonCollection).length === 1 && (
+      {timeForBattle && (
         <BattleGround
           timeForBattle={timeForBattle}
           setTimeForBattle={setTimeForBattle}
